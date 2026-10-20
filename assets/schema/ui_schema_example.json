@@ -1,0 +1,202 @@
+{
+  "version": "1.0",
+  "home_page": {
+    "sections": [
+      {
+        "type": "section_header",
+        "id": "featured_brands_header",
+        "order": 0,
+        "visible": true,
+        "properties": {
+          "title": "Brand Favorit",
+          "icon": "star",
+          "show_see_all": true
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 1,
+        "visible": true,
+        "properties": {
+          "height": 4
+        }
+      },
+      {
+        "type": "featured_brands",
+        "id": "featured_brands_row",
+        "order": 2,
+        "visible": true,
+        "properties": {
+          "max_items": 8,
+          "show_as_grid": false,
+          "visible_items": 4
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 3,
+        "visible": true,
+        "properties": {
+          "height": 10
+        }
+      },{
+        "type": "banner_carousel",
+        "id": "main_banner",
+        "order": 4,
+        "visible": true,
+        "properties": {
+          "height": 180,
+          "auto_play": true
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 5,
+        "visible": true,
+        "properties": {
+          "height": 10
+        }
+      },
+      {
+        "type": "container",
+        "id": "points_vouchers_container",
+        "order": 6,
+        "visible": true,
+        "properties": {},
+        "style": {
+          "padding": 12
+        },
+        "children": [
+          {
+            "type": "points_vouchers_row",
+            "order": 0,
+            "visible": true,
+            "properties": {}
+          }
+        ]
+      },
+      {
+        "type": "spacer",
+        "order": 7,
+        "visible": true,
+        "properties": {
+          "height": 10
+        }
+      },
+      {
+        "type": "section_header",
+        "id": "nearest_location_header",
+        "order": 8,
+        "visible": true,
+        "properties": {
+          "title": "Lokasi Terdekat",
+          "icon": "location_on",
+          "show_see_all": true
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 9,
+        "visible": true,
+        "properties": {
+          "height": 6
+        }
+      },
+      {
+        "type": "nearest_location",
+        "id": "nearest_branches",
+        "order": 10,
+        "visible": true,
+        "properties": {
+          "max_items": 3
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 11,
+        "visible": true,
+        "properties": {
+          "height": 8
+        }
+      },
+      {
+        "type": "section_header",
+        "id": "popular_items_header",
+        "order": 12,
+        "visible": true,
+        "properties": {
+          "title": "Menu Populer",
+          "show_see_all": true,
+          "icon": "local_fire_department"
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 13,
+        "visible": true,
+        "properties": {
+          "height": 4
+        }
+      },
+      {
+        "type": "popular_items",
+        "id": "popular_products_grid",
+        "order": 14,
+        "visible": true,
+        "properties": {
+          "max_items": 4,
+          "columns": 2
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 15,
+        "visible": true,
+        "properties": {
+          "height": 20
+        }
+      },
+      {
+        "type": "section_header",
+        "id": "vouchers_header",
+        "order": 16,
+        "visible": true,
+        "properties": {
+          "title": "Voucher Aktif",
+          "icon": "card_giftcard",
+          "show_see_all": true
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 17,
+        "visible": true,
+        "properties": {
+          "height": 6
+        }
+      },
+      {
+        "type": "vouchers_list",
+        "id": "active_vouchers",
+        "order": 18,
+        "visible": true,
+        "properties": {
+          "max_items": 3
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 19,
+        "visible": true,
+        "properties": {
+          "height": 110
+        }
+      }
+    ]
+  },
+  "theme": {
+    "primary_color": "#DD2222",
+    "secondary_color": "#2E7D32",
+    "accent_color": "#FF6B35"
+  }
+}

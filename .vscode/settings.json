@@ -1,0 +1,9 @@
+{
+  "java.import.gradle.enabled": false,
+  "java.autobuild.enabled": false,
+  "gradle.autoDetect": "off",
+  "java.configuration.updateBuildConfiguration": "disabled",
+  "java.import.gradle.wrapper.enabled": false,
+  "java.jdt.ls.java.home": "C:\\Program Files\\Android\\Android Studio1\\jbr",
+  "java.trace.server": "off"
+}

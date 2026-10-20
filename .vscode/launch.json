@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Delitopia App - Production API",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=ENV=production",
+        "--dart-define=API_BASE_URL=https://aplikasi.mannagroup.id/api",
+        "--dart-define=SOCKET_URL=wss://aplikasi.mannagroup.id"
+      ]
+    }
+  ]
+}

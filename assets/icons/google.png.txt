@@ -1,0 +1,9 @@
+This is a placeholder file. Please replace with actual google.png image.
+
+To get the official Google logo:
+1. Visit: https://about.google/brand-resources/
+2. Download the "Google G Logo"
+3. Save as google.png in this directory
+4. Delete this google.png.txt file
+
+Until then, the app will show a fallback icon.

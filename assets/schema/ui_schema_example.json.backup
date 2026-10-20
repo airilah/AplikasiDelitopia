@@ -1,0 +1,192 @@
+{
+  "version": "1.0",
+  "home_page": {
+    "sections": [
+      {
+        "type": "section_header",
+        "id": "featured_brands_header",
+        "order": 0,
+        "visible": true,
+        "properties": {
+          "title": "Featured Brands",
+          "show_see_all": true
+        }
+      },
+      {
+        "type": "featured_brands",
+        "id": "featured_brands_grid",
+        "order": 1,
+        "visible": true,
+        "properties": {
+          "max_items": 4,
+          "show_as_grid": true
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 2,
+        "visible": true,
+        "properties": {
+          "height": 32
+        }
+      },
+      {
+        "type": "section_header",
+        "id": "nearest_location_header",
+        "order": 3,
+        "visible": true,
+        "properties": {
+          "title": "Nearest Location",
+          "icon": "location_on",
+          "show_see_all": true
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 4,
+        "visible": true,
+        "properties": {
+          "height": 16
+        }
+      },
+      {
+        "type": "nearest_location",
+        "id": "nearest_branches",
+        "order": 5,
+        "visible": true,
+        "properties": {
+          "max_items": 4
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 6,
+        "visible": true,
+        "properties": {
+          "height": 32
+        }
+      },
+      {
+        "type": "container",
+        "id": "points_vouchers_container",
+        "order": 7,
+        "visible": true,
+        "properties": {},
+        "style": {
+          "padding": 20
+        },
+        "children": [
+          {
+            "type": "points_vouchers_row",
+            "order": 0,
+            "visible": true,
+            "properties": {}
+          }
+        ]
+      },
+      {
+        "type": "spacer",
+        "order": 8,
+        "visible": true,
+        "properties": {
+          "height": 24
+        }
+      },
+      {
+        "type": "banner_carousel",
+        "id": "main_banner",
+        "order": 9,
+        "visible": true,
+        "properties": {
+          "height": 240,
+          "auto_play": true
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 10,
+        "visible": true,
+        "properties": {
+          "height": 32
+        }
+      },
+      {
+        "type": "section_header",
+        "id": "popular_items_header",
+        "order": 11,
+        "visible": true,
+        "properties": {
+          "title": "Popular Items",
+          "show_see_all": true
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 12,
+        "visible": true,
+        "properties": {
+          "height": 16
+        }
+      },
+      {
+        "type": "popular_items",
+        "id": "popular_products_grid",
+        "order": 13,
+        "visible": true,
+        "properties": {
+          "max_items": 6,
+          "columns": 2
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 14,
+        "visible": true,
+        "properties": {
+          "height": 16
+        }
+      },
+      {
+        "type": "section_header",
+        "id": "vouchers_header",
+        "order": 15,
+        "visible": true,
+        "properties": {
+          "title": "Active Vouchers",
+          "icon": "card_giftcard",
+          "show_see_all": true
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 16,
+        "visible": true,
+        "properties": {
+          "height": 16
+        }
+      },
+      {
+        "type": "vouchers_list",
+        "id": "active_vouchers",
+        "order": 17,
+        "visible": true,
+        "properties": {
+          "max_items": 3
+        }
+      },
+      {
+        "type": "spacer",
+        "order": 18,
+        "visible": true,
+        "properties": {
+          "height": 32
+        }
+      }
+    ]
+  },
+  "theme": {
+    "primary_color": "#DD2222",
+    "secondary_color": "#2E7D32",
+    "accent_color": "#FF6B35"
+  }
+}

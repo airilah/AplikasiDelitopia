@@ -1,0 +1,5 @@
+# Copy this file to android/key.properties only on the build machine.
+storePassword=
+keyPassword=
+keyAlias=
+storeFile=

@@ -1,0 +1,114 @@
+{
+  "project_info": {
+    "project_number": "500255296049",
+    "project_id": "delitopiaapp",
+    "storage_bucket": "delitopiaapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500255296049:android:5ff5f1eacf059996f46310",
+        "android_client_info": {
+          "package_name": "com.delitopia.softindo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "500255296049-q71380bfqqh1r2hqf1ktiusjb77uj1ik.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.delitopia.softindo",
+            "certificate_hash": "8cf298853e6c634309a7a29c60a655554b971188"
+          }
+        },
+        {
+          "client_id": "500255296049-u9ca7blp8vpja64v7tte91m3cp61f9rk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.delitopia.softindo",
+            "certificate_hash": "8e11a6e9ad375975bde532d4dd9e16abb5865ca8"
+          }
+        },
+        {
+          "client_id": "500255296049-6jjh3bjekn6upmtkov4lcbln8g6bug1q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz5RHbVV1UdZhrK7mwn7qDc_1whvKT110"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "500255296049-6jjh3bjekn6upmtkov4lcbln8g6bug1q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "500255296049-613a4qg40tjkm5t9qjjb5m1it79chs81.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.delitopia.softindo"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500255296049:android:5ff5f1eacf059996f46310",
+        "android_client_info": {
+          "package_name": "com.delitopia.aplikasi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "500255296049-q71380bfqqh1r2hqf1ktiusjb77uj1ik.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.delitopia.aplikasi",
+            "certificate_hash": "8cf298853e6c634309a7a29c60a655554b971188"
+          }
+        },
+        {
+          "client_id": "500255296049-u9ca7blp8vpja64v7tte91m3cp61f9rk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.delitopia.aplikasi",
+            "certificate_hash": "8e11a6e9ad375975bde532d4dd9e16abb5865ca8"
+          }
+        },
+        {
+          "client_id": "500255296049-6jjh3bjekn6upmtkov4lcbln8g6bug1q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz5RHbVV1UdZhrK7mwn7qDc_1whvKT110"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "500255296049-6jjh3bjekn6upmtkov4lcbln8g6bug1q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "500255296049-613a4qg40tjkm5t9qjjb5m1it79chs81.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.delitopia.aplikasi"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
