@@ -543,7 +543,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                                 (session.branchId.toString() == effectiveBranchId ||
                                     effectiveBranchId.isEmpty)) {
                               return SliverToBoxAdapter(
-                                child: _buildTableSessionBanner(session),
+                                child: _buildTableSessionBanner(session, lang),
                               );
                             }
                             return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -826,7 +826,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
       ));
   }
 
-  Widget _buildTableSessionBanner(TableSession session) {
+  Widget _buildTableSessionBanner(TableSession session, AppLanguage lang) {
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 8, 14, 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -853,7 +853,9 @@ class _MenuViewState extends ConsumerState<MenuView> {
                 Row(
                   children: [
                     Text(
-                      'Dine In Meja ${session.tableNumber}',
+                      lang == AppLanguage.indonesia
+                          ? 'Dine In Meja ${session.tableNumber}'
+                          : 'Dine In Table ${session.tableNumber}',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
@@ -878,7 +880,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Nomor meja terisi otomatis saat checkout',
+                  tr.get('table_session_banner_desc', lang),
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
                 ),
               ],

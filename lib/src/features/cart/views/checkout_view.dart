@@ -959,14 +959,14 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                                   borderRadius: BorderRadius.circular(6),
                                   border: Border.all(color: const Color(0xFFFECACA)),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.swap_horiz_rounded, size: 13, color: Color(0xFFDC2626)),
-                                    SizedBox(width: 4),
+                                    const Icon(Icons.swap_horiz_rounded, size: 13, color: Color(0xFFDC2626)),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      'Batalkan/Ganti',
-                                      style: TextStyle(
+                                      tr.get('cancel_change_table', lang),
+                                      style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
                                         color: Color(0xFFDC2626),
@@ -1003,9 +1003,7 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                                         const SizedBox(width: 10),
                                         Expanded(
                                           child: Text(
-                                            lang == AppLanguage.indonesia
-                                                ? 'Nomor meja otomatis terisi dari scan QR meja dan tidak dapat diubah.'
-                                                : 'Table number is auto-filled from QR and cannot be edited.',
+                                            tr.get('table_locked_snack', lang),
                                             style: const TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
@@ -1017,7 +1015,7 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                                       ],
                                     ),
                                     action: SnackBarAction(
-                                      label: 'Ganti Meja',
+                                      label: tr.get('change_table', lang),
                                       textColor: const Color(0xFFEF4444),
                                       onPressed: () {
                                         ref.read(tableSessionProvider.notifier).state = null;
