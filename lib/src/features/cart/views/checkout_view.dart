@@ -945,80 +945,131 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                         children: [
                           _buildSectionHeader(tr.get('table_number', lang)),
                           if (isLocked)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: const Color(0xFFCBD5E1)),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.lock_rounded, size: 12, color: Color(0xFF64748B)),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Terkunci dari QR',
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF475569),
+                            InkWell(
+                              onTap: () {
+                                ref.read(tableSessionProvider.notifier).state = null;
+                                _tableNumberController.clear();
+                                context.push(AppRouter.qrScanner);
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF2F2),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFFFECACA)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.swap_horiz_rounded, size: 13, color: Color(0xFFDC2626)),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Batalkan/Ganti',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFDC2626),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      TextField(
-                        controller: _tableNumberController,
-                        readOnly: isLocked,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(5),
-                        ],
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: isLocked ? const Color(0xFF1E293B) : Colors.black,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: tr.get('enter_table_number', lang),
-                          hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey[400]),
-                          prefixIcon: const Icon(Icons.table_restaurant, size: 18),
-                          suffixIcon: isLocked
-                              ? const Tooltip(
-                                  message: 'Nomor meja otomatis terisi dari hasil scan QR meja dan tidak dapat diubah.',
-                                  child: Icon(Icons.lock_rounded, size: 16, color: Color(0xFF64748B)),
-                                )
-                              : null,
-                          filled: true,
-                          fillColor: isLocked ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          helperText: isLocked
-                              ? (lang == AppLanguage.indonesia
-                                  ? 'Nomor meja terisi otomatis dari scan QR dan tidak dapat diubah.'
-                                  : 'Table number auto-filled from QR scan and locked.')
-                              : null,
-                          helperStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: Colors.grey.shade200),
+                      GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: isLocked
+                            ? () {
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    backgroundColor: const Color(0xFF1E293B),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    content: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(7),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF334155),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(Icons.lock_rounded, size: 16, color: Color(0xFFF87171)),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            lang == AppLanguage.indonesia
+                                                ? 'Nomor meja otomatis terisi dari scan QR meja dan tidak dapat diubah.'
+                                                : 'Table number is auto-filled from QR and cannot be edited.',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    action: SnackBarAction(
+                                      label: 'Ganti Meja',
+                                      textColor: const Color(0xFFEF4444),
+                                      onPressed: () {
+                                        ref.read(tableSessionProvider.notifier).state = null;
+                                        _tableNumberController.clear();
+                                        context.push(AppRouter.qrScanner);
+                                      },
+                                    ),
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            : null,
+                        child: TextField(
+                          controller: _tableNumberController,
+                          readOnly: isLocked,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(5),
+                          ],
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isLocked ? const Color(0xFF1E293B) : Colors.black,
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(
-                              color: isLocked ? const Color(0xFFCBD5E1) : Colors.grey.shade200,
+                          decoration: InputDecoration(
+                            hintText: tr.get('enter_table_number', lang),
+                            hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey[400]),
+                            prefixIcon: const Icon(Icons.table_restaurant, size: 18),
+                            suffixIcon: isLocked
+                                ? const Icon(Icons.lock_rounded, size: 16, color: Color(0xFF64748B))
+                                : null,
+                            filled: true,
+                            fillColor: isLocked ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(color: Colors.grey.shade200),
                             ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(
-                              color: isLocked ? const Color(0xFFCBD5E1) : const Color(0xFFDD2222),
-                              width: 1.2,
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: isLocked ? const Color(0xFFCBD5E1) : Colors.grey.shade200,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: isLocked ? const Color(0xFFCBD5E1) : const Color(0xFFDD2222),
+                                width: 1.2,
+                              ),
                             ),
                           ),
                         ),

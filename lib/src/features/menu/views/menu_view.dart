@@ -887,7 +887,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
           InkWell(
             onTap: () {
               ref.read(tableSessionProvider.notifier).state = null;
-              Helpers.showSnackbar(context, 'Sesi meja dibatalkan');
+              context.push(AppRouter.qrScanner);
             },
             borderRadius: BorderRadius.circular(20),
             child: Padding(

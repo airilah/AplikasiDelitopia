@@ -812,7 +812,9 @@ class _QRScannerViewState extends ConsumerState<QRScannerView>
                       // Title
                       Expanded(
                         child: Text(
-                          tr.get('scan_qr_voucher', lang),
+                          lang == AppLanguage.indonesia
+                              ? 'Scan QR / Barcode'
+                              : 'Scan QR / Barcode',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -868,16 +870,58 @@ class _QRScannerViewState extends ConsumerState<QRScannerView>
               ),
             ),
 
+            // ── Dual Feature Badges (Meja & Voucher) ───
+            Positioned(
+              top: (screenSize.height / 2) - (scannerSize / 2) - 44,
+              left: 20,
+              right: 20,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.table_restaurant_rounded, size: 14, color: Color(0xFFF87171)),
+                      const SizedBox(width: 5),
+                      Text(
+                        lang == AppLanguage.indonesia ? 'Meja Restoran' : 'Restaurant Table',
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        width: 4,
+                        height: 4,
+                        decoration: const BoxDecoration(color: Colors.white38, shape: BoxShape.circle),
+                      ),
+                      const Icon(Icons.confirmation_number_rounded, size: 14, color: Color(0xFFFBBF24)),
+                      const SizedBox(width: 5),
+                      Text(
+                        lang == AppLanguage.indonesia ? 'Voucher Promo' : 'Promo Voucher',
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
             // ── Viewfinder Subtitle Guidance ──────────
             Positioned(
               top: (screenSize.height / 2) + (scannerSize / 2) + 16,
               left: 20,
               right: 20,
               child: Text(
-                tr.get('point_camera_at_qr', lang),
+                lang == AppLanguage.indonesia
+                    ? 'Arahkan kamera ke QR Meja Restoran atau Voucher Promo'
+                    : 'Point camera at Table QR or Promo Voucher',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.2,
                   shadows: [
@@ -925,19 +969,36 @@ class _QRScannerViewState extends ConsumerState<QRScannerView>
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
-                                  Icons.confirmation_number_outlined,
+                                  Icons.keyboard_alt_outlined,
                                   color: Color(0xFFDD2222),
                                   size: 18,
                                 ),
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                tr.get('have_voucher_code', lang),
-                                style: const TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1F2937),
-                                ),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    lang == AppLanguage.indonesia
+                                        ? 'Punya Kode Voucher?'
+                                        : 'Have a Voucher Code?',
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF1F2937),
+                                    ),
+                                  ),
+                                  Text(
+                                    lang == AppLanguage.indonesia
+                                        ? 'Ketik kode manual jika QR sulit terbaca'
+                                        : 'Type code manually if QR is unclear',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      color: Colors.grey.shade500,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
