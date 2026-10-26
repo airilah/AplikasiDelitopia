@@ -10,7 +10,10 @@ import '../../../core/services/api_client.dart';
 import '../../../core/localization/app_language.dart';
 import '../../voucher/controllers/voucher_controller.dart';
 import '../../../shared/services/service_providers.dart'
-    show notificationsProvider, hasUnreadNotificationsProvider;
+    show notificationsProvider, hasUnreadNotificationsProvider, branchesProvider;
+import '../../../shared/models/table_session_model.dart';
+import '../../../shared/models/brand_model.dart';
+import '../../menu/views/brand_branch_selection_view.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/auth_guard.dart';
 
@@ -69,7 +72,82 @@ class _QRScannerViewState extends ConsumerState<QRScannerView>
     setState(() => _isProcessingScan = true);
     HapticFeedback.mediumImpact();
 
+    // 1. Check if the scanned code is a table barcode/QR
+    final tableSession = TableQRParser.parse(cleanCode);
+    if (tableSession != null) {
+      await _processTableScan(tableSession);
+      return;
+    }
+
+    // 2. Otherwise fallback to voucher code claim
     await _processClaimVoucher(cleanCode);
+  }
+
+  Future<void> _processTableScan(TableSession tableData) async {
+    final lang = ref.read(appLanguageProvider);
+    setState(() => _isLoading = true);
+
+    try {
+      int? resolvedBrandId = tableData.brandId;
+      String? resolvedBranchName = tableData.branchName;
+      String? resolvedBrandName = tableData.brandName;
+
+      // Match branch info from branchesProvider
+      try {
+        final branches = await ref.read(branchesProvider.future);
+        final matched = branches.where((b) => b.id == tableData.branchId);
+        if (matched.isNotEmpty) {
+          final branch = matched.first;
+          resolvedBrandId ??= branch.brandId;
+          resolvedBranchName ??= branch.outlet;
+          resolvedBrandName ??= branch.brandName;
+
+          // Set active branch & brand in Riverpod
+          ref.read(selectedBranchProvider.notifier).state = branch;
+          ref.read(selectedBrandProvider.notifier).state = Brand(
+            id: branch.brandId,
+            name: branch.brandName,
+            logo: branch.brandLogo ?? '',
+            service: 0,
+            tax: 0,
+            category: const [],
+          );
+        }
+      } catch (_) {}
+
+      // Save table session
+      final finalSession = tableData.copyWith(
+        brandId: resolvedBrandId,
+        branchName: resolvedBranchName,
+        brandName: resolvedBrandName,
+        isLockedFromQr: true,
+      );
+      ref.read(tableSessionProvider.notifier).state = finalSession;
+
+      if (!mounted) return;
+
+      final successMsg = lang == AppLanguage.indonesia
+          ? 'Meja ${finalSession.tableNumber} terdeteksi! Membuka menu cabang...'
+          : 'Table ${finalSession.tableNumber} detected! Opening branch menu...';
+
+      Helpers.showSnackbar(context, successMsg);
+
+      final brandParam = resolvedBrandId ?? 1;
+      context.go('${AppRouter.menu}?branchId=${finalSession.branchId}&brandId=$brandParam');
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorAlert(
+        lang == AppLanguage.indonesia ? 'Gagal Membuka Meja' : 'Failed to Open Table',
+        e.toString(),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isProcessingScan = false;
+        });
+      }
+    }
   }
 
   Future<void> _processClaimVoucher(String code) async {

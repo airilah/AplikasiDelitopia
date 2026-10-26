@@ -20,6 +20,7 @@ import '../../../core/utils/helpers.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../shared/widgets/price_display_widget.dart';
+import '../../../shared/models/table_session_model.dart';
 
 // Menu key for provider - using string to avoid map reference issues
 class MenuKey {
@@ -54,12 +55,16 @@ class MenuView extends ConsumerStatefulWidget {
   final String? brandId;
   final String? branchId;
   final String? categoryId;
+  final String? tableNumber;
+  final String? zone;
 
   const MenuView({
     super.key,
     this.brandId,
     this.branchId,
     this.categoryId,
+    this.tableNumber,
+    this.zone,
   });
 
   @override
@@ -76,6 +81,21 @@ class _MenuViewState extends ConsumerState<MenuView> {
   void initState() {
     super.initState();
     _activeBranchId = widget.branchId;
+
+    if (widget.tableNumber != null && widget.branchId != null) {
+      final bId = int.tryParse(widget.branchId!);
+      if (bId != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(tableSessionProvider.notifier).state = TableSession(
+            branchId: bId,
+            brandId: widget.brandId != null ? int.tryParse(widget.brandId!) : null,
+            tableNumber: widget.tableNumber!,
+            zone: widget.zone,
+            isLockedFromQr: true,
+          );
+        });
+      }
+    }
   }
 
   @override
@@ -514,6 +534,22 @@ class _MenuViewState extends ConsumerState<MenuView> {
                               brandName, branch, distanceLabel, branches, menus),
                         ),
 
+                        // Table Session Banner
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final session = ref.watch(tableSessionProvider);
+                            if (session != null &&
+                                session.tableNumber.isNotEmpty &&
+                                (session.branchId.toString() == effectiveBranchId ||
+                                    effectiveBranchId.isEmpty)) {
+                              return SliverToBoxAdapter(
+                                child: _buildTableSessionBanner(session),
+                              );
+                            }
+                            return const SliverToBoxAdapter(child: SizedBox.shrink());
+                          },
+                        ),
+
                         // Search Bar
                         SliverToBoxAdapter(
                           child: _buildSearchBar(),
@@ -788,6 +824,80 @@ class _MenuViewState extends ConsumerState<MenuView> {
           ),
         ),
       ));
+  }
+
+  Widget _buildTableSessionBanner(TableSession session) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFBBF7D0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: const Color(0xFF16A34A),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.table_restaurant_rounded, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Dine In Meja ${session.tableNumber}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                    if (session.zone != null && session.zone!.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          session.zone!,
+                          style: const TextStyle(fontSize: 10, color: Color(0xFF166534), fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Nomor meja terisi otomatis saat checkout',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              ref.read(tableSessionProvider.notifier).state = null;
+              Helpers.showSnackbar(context, 'Sesi meja dibatalkan');
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(Icons.close_rounded, size: 18, color: Colors.grey.shade600),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildThreeTabsMenuView(AppLanguage lang) {

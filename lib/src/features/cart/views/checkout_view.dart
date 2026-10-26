@@ -29,6 +29,7 @@ import '../../../core/widgets/app_maintenance_dialog.dart';
 import '../widgets/voucher_selection_bottom_sheet.dart';
 import '../../voucher/models/voucher_model.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../shared/models/table_session_model.dart';
 
 class CheckoutView extends ConsumerStatefulWidget {
   const CheckoutView({super.key});
@@ -63,6 +64,11 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
   @override
   void initState() {
     super.initState();
+    final tableSession = ref.read(tableSessionProvider);
+    if (tableSession != null && tableSession.tableNumber.isNotEmpty) {
+      _orderType = 'dine_in';
+      _tableNumberController.text = tableSession.tableNumber;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(appMaintenanceProvider.notifier).fetchMaintenance();
     });
@@ -925,30 +931,102 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
               const SizedBox(height: 14),
               // Table Number
               if (_orderType == 'dine_in') ...[
-                _buildSectionHeader(tr.get('table_number', lang)),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _tableNumberController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(5),
-                  ],
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                  decoration: InputDecoration(
-                    hintText: tr.get('enter_table_number', lang),
-                    hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey[400]),
-                    prefixIcon: const Icon(Icons.table_restaurant, size: 18),
-                    filled: true, fillColor: const Color(0xFFF8FAFC),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFDD2222), width: 1.2)))),
-                const SizedBox(height: 14),
+                Builder(builder: (context) {
+                  final tableSession = ref.watch(tableSessionProvider);
+                  final isLocked = tableSession != null &&
+                      tableSession.isLockedFromQr &&
+                      tableSession.tableNumber.isNotEmpty;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildSectionHeader(tr.get('table_number', lang)),
+                          if (isLocked)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.lock_rounded, size: 12, color: Color(0xFF64748B)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Terkunci dari QR',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF475569),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _tableNumberController,
+                        readOnly: isLocked,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(5),
+                        ],
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isLocked ? const Color(0xFF1E293B) : Colors.black,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: tr.get('enter_table_number', lang),
+                          hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey[400]),
+                          prefixIcon: const Icon(Icons.table_restaurant, size: 18),
+                          suffixIcon: isLocked
+                              ? const Tooltip(
+                                  message: 'Nomor meja otomatis terisi dari hasil scan QR meja dan tidak dapat diubah.',
+                                  child: Icon(Icons.lock_rounded, size: 16, color: Color(0xFF64748B)),
+                                )
+                              : null,
+                          filled: true,
+                          fillColor: isLocked ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          helperText: isLocked
+                              ? (lang == AppLanguage.indonesia
+                                  ? 'Nomor meja terisi otomatis dari scan QR dan tidak dapat diubah.'
+                                  : 'Table number auto-filled from QR scan and locked.')
+                              : null,
+                          helperStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: Colors.grey.shade200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(
+                              color: isLocked ? const Color(0xFFCBD5E1) : Colors.grey.shade200,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(
+                              color: isLocked ? const Color(0xFFCBD5E1) : const Color(0xFFDD2222),
+                              width: 1.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                  );
+                }),
               ],
               // Delivery Address
               if (_orderType == 'delivery') ...[
@@ -1458,6 +1536,10 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
       onTap: () => setState(() {
         _orderType = value;
         if (_orderType == 'dine_in') {
+          final tableSession = ref.read(tableSessionProvider);
+          if (tableSession != null && tableSession.tableNumber.isNotEmpty) {
+            _tableNumberController.text = tableSession.tableNumber;
+          }
           if (isQrisBelowMin) {
             _paymentMethod = 'cash';
           }

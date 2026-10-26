@@ -225,6 +225,32 @@ class AppRouter {
         },
       ),
 
+      // Deep Link Dine-In QR Route (e.g. from Google Lens, Camera, or External Scanner)
+      GoRoute(
+        path: '/dine-in',
+        name: 'dineIn',
+        redirect: (context, state) {
+          final branchId = state.uri.queryParameters['branchId'] ??
+              state.uri.queryParameters['branch'] ??
+              state.uri.queryParameters['cabang'];
+          final brandId = state.uri.queryParameters['brandId'] ??
+              state.uri.queryParameters['brand'];
+          final table = state.uri.queryParameters['table'] ??
+              state.uri.queryParameters['table_number'] ??
+              state.uri.queryParameters['tableNumber'] ??
+              state.uri.queryParameters['meja'];
+          final zone = state.uri.queryParameters['zone'];
+
+          if (branchId != null) {
+            final tableParam = table != null ? '&table=${Uri.encodeComponent(table)}' : '';
+            final zoneParam = zone != null ? '&zone=${Uri.encodeComponent(zone)}' : '';
+            final brandParam = brandId != null ? '&brandId=$brandId' : '';
+            return '${AppRouter.menu}?branchId=$branchId$brandParam$tableParam$zoneParam';
+          }
+          return '${AppRouter.navigation}?index=1';
+        },
+      ),
+
       // Menu/Product Routes
       GoRoute(
         path: menu,
@@ -242,10 +268,15 @@ class AppRouter {
           final brandId = state.uri.queryParameters['brandId'];
           final branchId = state.uri.queryParameters['branchId'];
           final categoryId = state.uri.queryParameters['categoryId'];
+          final table = state.uri.queryParameters['table'];
+          final zone = state.uri.queryParameters['zone'];
           return MenuView(
             brandId: brandId,
             branchId: branchId,
-            categoryId: categoryId);
+            categoryId: categoryId,
+            tableNumber: table,
+            zone: zone,
+          );
         },
       ),
       GoRoute(
