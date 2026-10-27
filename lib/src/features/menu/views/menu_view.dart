@@ -895,8 +895,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                 confirmText: tr.get('yes_cancel', lang, fallback: 'Ya, Batalkan'),
                 cancelText: tr.get('cancel', lang),
                 type: AppDialogType.danger,
-                icon: Icons.table_restaurant_rounded,
-                showIcon: true,
+                showIcon: false,
               );
               if (confirmed) {
                 ref.read(tableSessionProvider.notifier).state = null;

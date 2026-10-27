@@ -952,8 +952,7 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                                     confirmText: tr.get('yes_change', lang, fallback: 'Ya, Ganti'),
                                     cancelText: tr.get('cancel', lang),
                                     type: AppDialogType.danger,
-                                    icon: Icons.table_restaurant_rounded,
-                                    showIcon: true,
+                                    showIcon: false,
                                   );
                                   if (confirmed) {
                                     if (!context.mounted) return;
@@ -986,8 +985,7 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                                   message: tr.get('table_locked_alert_desc', lang),
                                   buttonText: tr.get('understand_button', lang, fallback: 'Mengerti'),
                                   buttonColor: const Color(0xFFDD2222),
-                                  icon: Icons.lock_rounded,
-                                  showIcon: true,
+                                  showIcon: false,
                                   type: AppDialogType.info,
                                 );
                               }
