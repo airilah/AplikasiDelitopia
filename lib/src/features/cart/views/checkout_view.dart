@@ -940,94 +940,60 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildSectionHeader(tr.get('table_number', lang)),
-                          if (isLocked)
-                            InkWell(
-                              onTap: () {
-                                ref.read(tableSessionProvider.notifier).state = null;
-                                _tableNumberController.clear();
-                                context.push(AppRouter.qrScanner);
-                              },
-                              borderRadius: BorderRadius.circular(6),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFEF2F2),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: const Color(0xFFFECACA)),
+                      _buildSectionHeader(
+                        tr.get('table_number', lang),
+                        trailing: isLocked
+                            ? TextButton.icon(
+                                onPressed: () async {
+                                  final confirmed = await AppDialog.showConfirm(
+                                    context: context,
+                                    title: tr.get('change_table_session_title', lang),
+                                    message: tr.get('change_table_session_confirm', lang),
+                                    confirmText: tr.get('yes_change', lang, fallback: 'Ya, Ganti'),
+                                    cancelText: tr.get('cancel', lang),
+                                    type: AppDialogType.danger,
+                                    icon: Icons.table_restaurant_rounded,
+                                    showIcon: true,
+                                  );
+                                  if (confirmed) {
+                                    if (!context.mounted) return;
+                                    ref.read(tableSessionProvider.notifier).state = null;
+                                    _tableNumberController.clear();
+                                    context.push(AppRouter.qrScanner);
+                                  }
+                                },
+                                icon: const Icon(Icons.swap_horiz, size: 13),
+                                label: Text(
+                                  tr.get('btn_change', lang),
+                                  style: const TextStyle(fontSize: 11.5),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.swap_horiz_rounded, size: 13, color: Color(0xFFDC2626)),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      tr.get('cancel_change_table', lang),
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFFDC2626),
-                                      ),
-                                    ),
-                                  ],
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFFDD2222),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  visualDensity: VisualDensity.compact,
                                 ),
-                              ),
-                            ),
-                        ],
+                              )
+                            : null,
                       ),
                       const SizedBox(height: 8),
                       GestureDetector(
-                        behavior: HitTestBehavior.translucent,
+                        behavior: HitTestBehavior.opaque,
                         onTap: isLocked
                             ? () {
-                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    behavior: SnackBarBehavior.floating,
-                                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    backgroundColor: const Color(0xFF1E293B),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    content: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(7),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF334155),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(Icons.lock_rounded, size: 16, color: Color(0xFFF87171)),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Text(
-                                            tr.get('table_locked_snack', lang),
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                              height: 1.35,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    action: SnackBarAction(
-                                      label: tr.get('change_table', lang),
-                                      textColor: const Color(0xFFEF4444),
-                                      onPressed: () {
-                                        ref.read(tableSessionProvider.notifier).state = null;
-                                        _tableNumberController.clear();
-                                        context.push(AppRouter.qrScanner);
-                                      },
-                                    ),
-                                    duration: const Duration(seconds: 3),
-                                  ),
+                                AppDialog.showAlert(
+                                  context: context,
+                                  title: tr.get('table_locked_alert_title', lang),
+                                  message: tr.get('table_locked_alert_desc', lang),
+                                  buttonText: tr.get('understand_button', lang, fallback: 'Mengerti'),
+                                  buttonColor: const Color(0xFFDD2222),
+                                  icon: Icons.lock_rounded,
+                                  showIcon: true,
+                                  type: AppDialogType.info,
                                 );
                               }
                             : null,
+                        child: IgnorePointer(
+                          ignoring: isLocked,
                         child: TextField(
                           controller: _tableNumberController,
                           readOnly: isLocked,
@@ -1072,7 +1038,8 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 14),
+                    ),
+                    const SizedBox(height: 14),
                     ],
                   );
                 }),

@@ -887,9 +887,20 @@ class _MenuViewState extends ConsumerState<MenuView> {
             ),
           ),
           InkWell(
-            onTap: () {
-              ref.read(tableSessionProvider.notifier).state = null;
-              context.push(AppRouter.qrScanner);
+            onTap: () async {
+              final confirmed = await AppDialog.showConfirm(
+                context: context,
+                title: tr.get('cancel_table_session_title', lang),
+                message: tr.get('cancel_table_session_confirm', lang),
+                confirmText: tr.get('yes_cancel', lang, fallback: 'Ya, Batalkan'),
+                cancelText: tr.get('cancel', lang),
+                type: AppDialogType.danger,
+                icon: Icons.table_restaurant_rounded,
+                showIcon: true,
+              );
+              if (confirmed) {
+                ref.read(tableSessionProvider.notifier).state = null;
+              }
             },
             borderRadius: BorderRadius.circular(20),
             child: Padding(
