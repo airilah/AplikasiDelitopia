@@ -29,6 +29,7 @@ import '../../features/profile/views/address_list_view.dart';
 import '../../features/profile/views/add_edit_address_view.dart';
 import '../../features/profile/views/settings_view.dart';
 import '../../features/qr_scanner/views/qr_scanner_view.dart';
+import '../../features/qr_scanner/views/dine_in_deep_link_view.dart';
 import '../../features/voucher/views/vouchers_view.dart';
 import '../../features/favorites/views/favorites_view.dart';
 import '../../features/notifications/views/notifications_view.dart';
@@ -229,7 +230,7 @@ class AppRouter {
       GoRoute(
         path: '/dine-in',
         name: 'dineIn',
-        redirect: (context, state) {
+        builder: (context, state) {
           final branchId = state.uri.queryParameters['branchId'] ??
               state.uri.queryParameters['branch'] ??
               state.uri.queryParameters['cabang'];
@@ -241,13 +242,12 @@ class AppRouter {
               state.uri.queryParameters['meja'];
           final zone = state.uri.queryParameters['zone'];
 
-          if (branchId != null) {
-            final tableParam = table != null ? '&table=${Uri.encodeComponent(table)}' : '';
-            final zoneParam = zone != null ? '&zone=${Uri.encodeComponent(zone)}' : '';
-            final brandParam = brandId != null ? '&brandId=$brandId' : '';
-            return '${AppRouter.menu}?branchId=$branchId$brandParam$tableParam$zoneParam';
-          }
-          return '${AppRouter.navigation}?index=1';
+          return DineInDeepLinkView(
+            branchId: branchId,
+            brandId: brandId,
+            table: table,
+            zone: zone,
+          );
         },
       ),
 
@@ -555,20 +555,11 @@ class AppRouter {
 
     // Redirect Logic (e.g., authentication)
     redirect: (context, state) {
-      // Authentication redirect logic: guest browsing enabled without forced login redirect
-      // Check if user is logged in, redirect to login if not
-      // Example:
-      // final isLoggedIn = ref.read(authStateProvider).isLoggedIn;
-      // final isGoingToAuth = state.matchedLocation.startsWith('/login') ||
-      //     state.matchedLocation.startsWith('/register');
-      //
-      // if (!isLoggedIn && !isGoingToAuth) {
-      //   return AppRouter.login;
-      // }
-      //
-      // if (isLoggedIn && isGoingToAuth) {
-      //   return AppRouter.navigation;
-      // }
+      // Normalization for custom schemes like delitopia://dine-in?... where host is dine-in
+      if (state.uri.host == 'dine-in' && state.uri.path != '/dine-in') {
+        final q = state.uri.query;
+        return '/dine-in${q.isNotEmpty ? '?$q' : ''}';
+      }
 
       return null; // No redirect
     });

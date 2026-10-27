@@ -38,11 +38,12 @@
             </intent-filter>
 
             <!-- Deep linking intent filters for Dine-In Table QR -->
-            <intent-filter android:autoVerify="true">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="delitopia" android:host="dine-in" />
+                <data android:scheme="delitopia" android:pathPrefix="/dine-in" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
