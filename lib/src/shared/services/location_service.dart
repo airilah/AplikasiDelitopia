@@ -33,9 +33,18 @@ class LocationService {
         return null;
       }
 
-      // Get current position
-      return await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
+      // Get current position with timeout, fallback to last known position
+      try {
+        return await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 4),
+          ),
+        );
+      } catch (e) {
+        debugPrint('getCurrentPosition timeout or error, trying last known: $e');
+        return await Geolocator.getLastKnownPosition();
+      }
     } catch (e) {
       debugPrint('Error getting location: $e');
       return null;

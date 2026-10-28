@@ -38,6 +38,7 @@ class _CachedMenu {
   final int soldCount;
   final int brandId;
   final int branchId;
+  final List<int> availableBranchIds;
   final String category;
   final String description;
   final String searchHaystack;
@@ -49,6 +50,7 @@ class _CachedMenu {
     required this.soldCount,
     required this.brandId,
     required this.branchId,
+    this.availableBranchIds = const [],
     required this.category,
     required this.description,
   }) : searchHaystack = '$name $category $description'.toLowerCase();
@@ -71,6 +73,7 @@ class SearchService {
   List<_CachedMenu>? _cachedMenus;
   DateTime? _lastCacheTime;
   bool _isLoadingCache = false;
+  Position? _lastKnownUserPos;
 
   SearchService(this._apiClient, this._locationService);
 
@@ -276,13 +279,31 @@ class SearchService {
             int.tryParse(item['branch_id']?.toString() ?? '') ??
             0;
 
-        // Pastikan menu terhubung ke cabang aktif:
-        // 1. Jika terikat ke cabang spesifik, pastikan cabang tersebut aktif
-        if (branchId != 0 && !bMap.containsKey(branchId)) {
-          continue;
+        final List<int> availableBranchIds = [];
+        final rawBranchIds = item['available_branch_ids'] ?? item['branch_ids'];
+        if (rawBranchIds is List) {
+          for (final bid in rawBranchIds) {
+            final parsed = int.tryParse(bid.toString());
+            if (parsed != null && parsed > 0) {
+              availableBranchIds.add(parsed);
+            }
+          }
         }
-        // 2. Jika hanya terikat brand, pastikan brand memiliki minimal 1 cabang aktif
-        if (branchId == 0 && brandId != 0 && (!byBrand.containsKey(brandId) || byBrand[brandId]!.isEmpty)) {
+        if (availableBranchIds.isEmpty && branchId > 0) {
+          availableBranchIds.add(branchId);
+        }
+
+        // Pastikan menu terhubung ke cabang aktif:
+        // 1. Jika memiliki daftar cabang, pastikan minimal satu cabang aktif di bMap
+        if (availableBranchIds.isNotEmpty) {
+          final hasActiveBranch = availableBranchIds.any((bid) => bMap.containsKey(bid));
+          if (!hasActiveBranch) continue;
+        } else if (brandId != 0) {
+          // 2. Jika hanya terikat brand, pastikan brand memiliki minimal 1 cabang aktif
+          if (!byBrand.containsKey(brandId) || byBrand[brandId]!.isEmpty) {
+            continue;
+          }
+        } else if (branchId != 0 && !bMap.containsKey(branchId)) {
           continue;
         }
 
@@ -296,6 +317,7 @@ class SearchService {
               0,
           brandId: brandId,
           branchId: branchId,
+          availableBranchIds: availableBranchIds,
           category: item['category']?.toString() ?? '',
           description: item['description']?.toString() ?? '',
         ));
@@ -319,14 +341,22 @@ class SearchService {
       return const GlobalSearchResult(outlets: [], menus: []);
     }
 
-    // Attempt to get user position if not supplied
-    Position? userPos = position;
+    // Attempt to get user position if not supplied, with cached fallback
+    Position? userPos = position ?? _lastKnownUserPos;
     if (userPos == null) {
       try {
         userPos = await _locationService.getCurrentPosition();
+        if (userPos != null) {
+          _lastKnownUserPos = userPos;
+        }
       } catch (e) {
         debugPrint('Location lookup ignored in search: $e');
       }
+    } else {
+      // Async refresh in background for fresher location
+      _locationService.getCurrentPosition().then((p) {
+        if (p != null) _lastKnownUserPos = p;
+      }).catchError((_) {});
     }
 
     // Fallback: perform search on intelligent localized catalog
@@ -439,18 +469,32 @@ class SearchService {
           }
         }
 
-        // Dynamically find the NEAREST ACTIVE BRANCH of this menu's brand
-        _CachedBranch? nearestBranch;
-        double? minDistance;
+        // Dynamically find the NEAREST ACTIVE BRANCH that sells this menu
+        List<_CachedBranch> candidateBranches = [];
+        if (m.availableBranchIds.isNotEmpty) {
+          for (final bid in m.availableBranchIds) {
+            final b = bMap[bid];
+            if (b != null) candidateBranches.add(b);
+          }
+        }
 
-        final candidateBranches = (m.branchId != 0 && bMap.containsKey(m.branchId))
-            ? [bMap[m.branchId]!]
-            : (byBrand[m.brandId] ?? <_CachedBranch>[]);
+        // Fallback ke seluruh cabang aktif milik brand jika candidateBranches belum terisi
+        if (candidateBranches.isEmpty && m.brandId != 0) {
+          candidateBranches = List<_CachedBranch>.from(byBrand[m.brandId] ?? []);
+        }
+
+        // Fallback terakhir ke cabang tunggal jika ada
+        if (candidateBranches.isEmpty && m.branchId != 0 && bMap.containsKey(m.branchId)) {
+          candidateBranches = [bMap[m.branchId]!];
+        }
 
         // Jika tidak ada cabang aktif yang menjual menu ini, jangan tampilkan
         if (candidateBranches.isEmpty) {
           continue;
         }
+
+        _CachedBranch? nearestBranch;
+        double? minDistance;
 
         if (userPos != null) {
           for (final b in candidateBranches) {
@@ -468,7 +512,7 @@ class SearchService {
           }
         }
 
-        // Fallback jika candidate belum ada koordinat GPS
+        // Fallback jika candidate belum ada koordinat GPS atau userPos null
         nearestBranch ??= candidateBranches.first;
 
         final branchId = nearestBranch.id;
@@ -490,15 +534,18 @@ class SearchService {
         ));
       }
 
-      // Sort Menus: higher relevance score first, then nearest distance ascending
+      // Sort Menus: nearest distance first (seperti outlet), lalu skor relevansi sebagai tie-breaker
       scoredMenus.sort((a, b) {
-        if (b.score != a.score) {
+        if (a.item.distanceInKm == null && b.item.distanceInKm == null) {
           return b.score.compareTo(a.score);
         }
-        if (a.item.distanceInKm == null && b.item.distanceInKm == null) return 0;
         if (a.item.distanceInKm == null) return 1;
         if (b.item.distanceInKm == null) return -1;
-        return a.item.distanceInKm!.compareTo(b.item.distanceInKm!);
+
+        final distComp = a.item.distanceInKm!.compareTo(b.item.distanceInKm!);
+        if (distComp != 0) return distComp;
+
+        return b.score.compareTo(a.score);
       });
 
       final matchedMenus = scoredMenus.map((s) => s.item).toList();
