@@ -1374,7 +1374,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          product.rating > 0
+                          (product.reviewCount > 0 && product.rating > 0)
                               ? product.rating.toStringAsFixed(1)
                               : '0.0',
                           style: const TextStyle(

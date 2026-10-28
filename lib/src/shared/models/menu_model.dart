@@ -174,9 +174,15 @@ class Menu {
           _parseInt(json['sold_count']) ??
           _parseInt(json['pos_sold_count']) ??
           0,
-      averageRating: _parseDouble(json['average_rating']) ??
-          _parseDouble(json['rating']) ??
-          0.0,
+      averageRating: (() {
+        final rc = _parseInt(json['review_count']) ??
+            _parseInt(json['total_reviews']) ??
+            0;
+        if (rc <= 0) return 0.0;
+        return _parseDouble(json['average_rating']) ??
+            _parseDouble(json['rating']) ??
+            0.0;
+      })(),
       reviewCount: _parseInt(json['review_count']) ??
           _parseInt(json['total_reviews']) ??
           0,

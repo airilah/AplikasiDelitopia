@@ -159,11 +159,19 @@ class Product {
       isPopular: parsedIsPopular,
       isNew: parsedIsNew,
       showcaseType: typeStr,
-      rating: (json['rating'] as num?)?.toDouble() ??
-          (json['average_rating'] as num?)?.toDouble() ??
-          (json['avg_rating'] as num?)?.toDouble() ??
-          0.0,
-      reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
+      rating: (() {
+        final rc = (json['review_count'] as num?)?.toInt() ??
+            (json['total_reviews'] as num?)?.toInt() ??
+            0;
+        if (rc <= 0) return 0.0;
+        return (json['rating'] as num?)?.toDouble() ??
+            (json['average_rating'] as num?)?.toDouble() ??
+            (json['avg_rating'] as num?)?.toDouble() ??
+            0.0;
+      })(),
+      reviewCount: (json['review_count'] as num?)?.toInt() ??
+          (json['total_reviews'] as num?)?.toInt() ??
+          0,
       totalSold: (json['total_sold'] as num?)?.toInt() ??
           (json['sold_count'] as num?)?.toInt() ??
           (json['pos_sold_count'] as num?)?.toInt() ??

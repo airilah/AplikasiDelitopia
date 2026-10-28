@@ -152,7 +152,7 @@ class FavoritesView extends ConsumerWidget {
                                       ),
                                       const SizedBox(width: 2),
                                       Text(
-                                        menu.averageRating > 0
+                                        (menu.reviewCount > 0 && menu.averageRating > 0)
                                             ? menu.averageRating.toStringAsFixed(1)
                                             : '0.0',
                                         style: const TextStyle(

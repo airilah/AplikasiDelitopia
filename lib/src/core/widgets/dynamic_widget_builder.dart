@@ -1371,7 +1371,7 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
                       ),
                       const SizedBox(width: 2),
                       Text(
-                        (product.rating != null && (product.rating as num) > 0)
+                        (product.reviewCount > 0 && product.rating != null && (product.rating as num) > 0)
                             ? (product.rating as num).toDouble().toStringAsFixed(1)
                             : '0.0',
                         style: const TextStyle(
