@@ -126,7 +126,7 @@ class _ProductReviewsViewState extends ConsumerState<ProductReviewsView> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            total > 0 ? avgRating.toStringAsFixed(1) : '5.0',
+                            total > 0 ? avgRating.toStringAsFixed(1) : '0.0',
                             style: const TextStyle(
                               fontSize: 38,
                               fontWeight: FontWeight.w900,
@@ -138,14 +138,18 @@ class _ProductReviewsViewState extends ConsumerState<ProductReviewsView> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: List.generate(5, (idx) {
-                              final score = total > 0 ? avgRating : 5.0;
+                              final score = total > 0 ? avgRating : 0.0;
+                              final isFilled = idx < score.floor();
+                              final isHalf = idx < score && !isFilled;
                               return Icon(
-                                idx < score.floor()
+                                isFilled
                                     ? Icons.star_rounded
-                                    : (idx < score
+                                    : (isHalf
                                         ? Icons.star_half_rounded
                                         : Icons.star_outline_rounded),
-                                color: const Color(0xFFF59E0B),
+                                color: (isFilled || isHalf)
+                                    ? const Color(0xFFF59E0B)
+                                    : const Color(0xFFCBD5E1),
                                 size: 16,
                               );
                             }),

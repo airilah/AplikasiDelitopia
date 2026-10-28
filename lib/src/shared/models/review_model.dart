@@ -137,15 +137,15 @@ class MenuReviewsResponse {
       }
     }
 
-    double avg = 5.0;
+    double avg = 0.0;
     int total = list.length;
     int withComment = 0;
     Map<int, int> breakdown = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
 
     if (json['summary'] is Map) {
       final s = json['summary'] as Map;
-      avg = (s['average_rating'] as num?)?.toDouble() ?? 5.0;
       total = (s['total_reviews'] as num?)?.toInt() ?? list.length;
+      avg = total > 0 ? ((s['average_rating'] as num?)?.toDouble() ?? 0.0) : 0.0;
       withComment = (s['total_with_comment'] as num?)?.toInt() ?? 0;
 
       if (s['rating_breakdown'] is Map) {

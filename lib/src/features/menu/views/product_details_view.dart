@@ -350,7 +350,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                                 Text(
                                   reviewsData.totalReviews > 0
                                       ? reviewsData.averageRating.toStringAsFixed(1)
-                                      : '5.0',
+                                      : '0.0',
                                   style: const TextStyle(
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w800,
@@ -398,7 +398,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                                     color: Color(0xFFF59E0B), size: 18),
                                 const SizedBox(width: 4),
                                 const Text(
-                                  '5.0',
+                                  '0.0',
                                   style: TextStyle(
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w500,

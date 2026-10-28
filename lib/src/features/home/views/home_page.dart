@@ -2213,7 +2213,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           Text(
                             product.rating > 0
                                 ? product.rating.toStringAsFixed(1)
-                                : '5.0',
+                                : '0.0',
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,

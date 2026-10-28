@@ -154,7 +154,7 @@ class FavoritesView extends ConsumerWidget {
                                       Text(
                                         menu.averageRating > 0
                                             ? menu.averageRating.toStringAsFixed(1)
-                                            : '4.8',
+                                            : '0.0',
                                         style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,

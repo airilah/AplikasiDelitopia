@@ -1376,7 +1376,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                         Text(
                           product.rating > 0
                               ? product.rating.toStringAsFixed(1)
-                              : '5.0',
+                              : '0.0',
                           style: const TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w800,

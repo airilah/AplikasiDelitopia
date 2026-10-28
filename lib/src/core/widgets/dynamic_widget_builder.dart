@@ -1373,7 +1373,7 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
                       Text(
                         (product.rating != null && (product.rating as num) > 0)
                             ? (product.rating as num).toDouble().toStringAsFixed(1)
-                            : '5.0',
+                            : '0.0',
                         style: const TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.bold,
