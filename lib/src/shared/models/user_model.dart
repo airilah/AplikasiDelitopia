@@ -174,12 +174,12 @@ class User {
 
   // Helper getters
   bool get active => isActive == '1';
-  bool get isMale => gender == 'M';
-  bool get isFemale => gender == 'F';
+  bool get isMale => gender == 'M' || gender == 'L';
+  bool get isFemale => gender == 'F' || gender == 'P';
 
   String get displayGender {
-    if (gender == 'M') return 'Male';
-    if (gender == 'F') return 'Female';
+    if (gender == 'M' || gender == 'L') return 'Male';
+    if (gender == 'F' || gender == 'P') return 'Female';
     return 'Not specified';
   }
 }
