@@ -445,9 +445,10 @@ class AuthService {
       return true;
     }
     if (user == null) return false;
-    return user.name.trim().isEmpty ||
-        user.email.trim().isEmpty ||
-        user.email.contains('@phone.local');
+    final isNameEmpty = user.name.trim().isEmpty || user.name.trim().toLowerCase() == 'tanpa nama';
+    final isBirthdayEmpty = user.birthday == null || user.birthday!.trim().isEmpty;
+    final isEmailEmpty = user.email.trim().isEmpty || user.email.contains('@phone.local');
+    return isNameEmpty || isBirthdayEmpty || isEmailEmpty || !user.profileCompleted;
   }
 
   String _mapGenderForBackend(String gender) {

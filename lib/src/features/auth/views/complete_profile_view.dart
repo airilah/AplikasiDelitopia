@@ -83,6 +83,26 @@ class _CompleteProfileViewState extends ConsumerState<CompleteProfileView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_birthday == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(tr.get('birthday_required', ref.read(appLanguageProvider))),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_gender == null || _gender!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(tr.get('gender_required', ref.read(appLanguageProvider))),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _message = null;
@@ -116,17 +136,18 @@ class _CompleteProfileViewState extends ConsumerState<CompleteProfileView> {
   Future<bool> _showExitConfirmation(BuildContext context, AppLanguage lang) async {
     final result = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.info_outline, color: Color(0xFFDD2222)),
+            const Icon(Icons.warning_amber_rounded, color: Color(0xFFDD2222)),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 lang == AppLanguage.indonesia
-                    ? 'Lengkapi Data Akun'
-                    : 'Complete Your Profile',
+                    ? 'Data Wajib Dilengkapi'
+                    : 'Profile Required',
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
@@ -134,15 +155,15 @@ class _CompleteProfileViewState extends ConsumerState<CompleteProfileView> {
         ),
         content: Text(
           lang == AppLanguage.indonesia
-              ? 'Tinggal 1 langkah lagi! Lengkapi nama dan tanggal lahir Anda agar dapat menikmati promo, voucher ulang tahun, dan kemudahan pemesanan.'
-              : 'Just 1 step left! Complete your name and birthday to enjoy member promos, birthday rewards, and seamless ordering.',
+              ? 'Nama dan tanggal lahir wajib dilengkapi untuk mengaktifkan akun member Delitopia serta mendapatkan hadiah voucher ulang tahun. Apakah Anda yakin ingin membatalkan pendaftaran?'
+              : 'Name and birthday are required to activate your Delitopia member account. Are you sure you want to cancel registration?',
           style: const TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(
-              lang == AppLanguage.indonesia ? 'Nanti Saja' : 'Later',
+              lang == AppLanguage.indonesia ? 'Batalkan & Keluar' : 'Cancel & Exit',
               style: TextStyle(color: Colors.grey.shade600),
             ),
           ),
@@ -156,7 +177,7 @@ class _CompleteProfileViewState extends ConsumerState<CompleteProfileView> {
             ),
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
-              lang == AppLanguage.indonesia ? 'Lengkapi Sekarang' : 'Complete Now',
+              lang == AppLanguage.indonesia ? 'Lanjutkan Pengisian' : 'Continue',
             ),
           ),
         ],
@@ -175,12 +196,10 @@ class _CompleteProfileViewState extends ConsumerState<CompleteProfileView> {
         if (didPop) return;
         final shouldLeave = await _showExitConfirmation(context, lang);
         if (shouldLeave && context.mounted) {
-          final destination = widget.returnTo;
-          context.go(
-            destination != null && destination.isNotEmpty
-                ? destination
-                : AppRouter.navigation,
-          );
+          await ref.read(authServiceProvider).logout();
+          if (context.mounted) {
+            context.go(AppRouter.login);
+          }
         }
       },
       child: Scaffold(
@@ -196,12 +215,10 @@ class _CompleteProfileViewState extends ConsumerState<CompleteProfileView> {
             onPressed: () async {
               final shouldLeave = await _showExitConfirmation(context, lang);
               if (shouldLeave && context.mounted) {
-                final destination = widget.returnTo;
-                context.go(
-                  destination != null && destination.isNotEmpty
-                      ? destination
-                      : AppRouter.navigation,
-                );
+                await ref.read(authServiceProvider).logout();
+                if (context.mounted) {
+                  context.go(AppRouter.login);
+                }
               }
             },
           ),
