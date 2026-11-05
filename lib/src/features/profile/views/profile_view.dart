@@ -152,14 +152,17 @@ class ProfileView extends ConsumerWidget {
                     ? 'Lengkapi Data Profil'
                     : 'Complete Your Profile',
                 subtitle: lang == AppLanguage.indonesia
-                    ? 'Lengkapi nama dan tanggal lahir untuk kemudahan pesanan & bonus promo'
-                    : 'Complete your name & birthday for smoother orders & exclusive rewards',
+                    ? 'Lengkapi nama & tanggal lahirmu untuk dapatkan voucher ulang tahun gratis dan promo spesial.'
+                    : 'Complete your name & birthday to get a free birthday voucher and special promo rewards.',
                 actionLabel: lang == AppLanguage.indonesia
                     ? 'Lengkapi Sekarang'
                     : 'Complete Now',
-                onTap: () => context.go(
-                  '?phone=',
-                ),
+                onTap: () async {
+                  await context.push(AppRouter.editProfile);
+                  if (context.mounted) {
+                    ref.invalidate(currentUserProvider);
+                  }
+                },
                 onDismiss: () {
                   ref.read(dismissedProfileCardsProvider.notifier).update(
                     (set) => {...set, 'complete_profile'},
@@ -882,57 +885,57 @@ class ProfileView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 26,
+                height: 26,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF1F1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: const Color(0xFFDD2222), size: 22),
+                child: Icon(icon, color: const Color(0xFFDD2222), size: 16),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF202124),
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.35,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1F2937),
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
               InkWell(
                 onTap: onDismiss,
                 borderRadius: BorderRadius.circular(20),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(
                     Icons.close_rounded,
-                    size: 18,
-                    color: Colors.grey.shade400,
+                    size: 14,
+                    color: Colors.grey.shade500,
                   ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
