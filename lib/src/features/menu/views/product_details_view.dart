@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/back_button_wrapper.dart';
@@ -102,6 +103,11 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     final reviewsKey = MenuReviewsKey(menuId: productId);
     final reviewsAsync = ref.watch(menuReviewsProvider(reviewsKey));
 
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final topPadding = mediaQuery.padding.top;
+    final headerHeight = screenWidth + topPadding;
+
     return BackButtonWrapper(
       child: Scaffold(
         body: productAsync.when(
@@ -115,9 +121,11 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
             return CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: 280,
+                expandedHeight: headerHeight,
                 pinned: true,
+                elevation: 0,
                 backgroundColor: const Color(0xFFDD2222),
+                systemOverlayStyle: SystemUiOverlayStyle.dark,
                 leading: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Container(
@@ -135,130 +143,196 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                     child: const AppBackButton(color: Colors.black87),
                   ),
                 ),
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final favoriteMenuId = product.menuTemplateId ?? product.id;
+                          final isFavAsync =
+                              ref.watch(isFavoriteProvider(favoriteMenuId));
+                          return isFavAsync.when(
+                            data: (isFav) => IconButton(
+                              icon: Icon(
+                                isFav ? Icons.favorite : Icons.favorite_border,
+                                color: isFav ? Colors.red : Colors.black87,
+                                size: 22,
+                              ),
+                              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                              padding: EdgeInsets.zero,
+                              onPressed: () async {
+                                if (!AuthGuard.requireLogin(context, ref)) {
+                                  return;
+                                }
+
+                                try {
+                                  final isNowFavorite = await ref
+                                      .read(favoriteControllerProvider.notifier)
+                                      .toggleFavorite(
+                                        favoriteMenuId,
+                                        product.name,
+                                        product.price,
+                                        menuTemplateId: product.menuTemplateId ?? productId,
+                                        branchId: _effectiveBranchId(product));
+                                  ref.invalidate(
+                                      profile_favorites.favoritesProvider);
+                                  ref.invalidate(isFavoriteProvider(favoriteMenuId));
+
+                                  if (context.mounted) {
+                                    final isId = ref.read(appLanguageProvider) == AppLanguage.indonesia;
+                                    Helpers.showCustomAlert(
+                                      context,
+                                      isNowFavorite
+                                          ? (isId ? 'Menu ditambahkan ke favorit' : 'Menu added to favorites')
+                                          : (isId ? 'Menu dihapus dari favorit' : 'Menu removed from favorites'),
+                                      isSuccess: isNowFavorite,
+                                      bottomOffset: 12,
+                                      includeBottomPadding: false,
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    Helpers.showCustomAlert(
+                                      context,
+                                      _friendlyFavoriteError(e),
+                                      isSuccess: false,
+                                      duration: const Duration(seconds: 2),
+                                      bottomOffset: 12,
+                                      includeBottomPadding: false,
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                            loading: () => const SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: Padding(
+                                padding: EdgeInsets.all(10.0),
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                            error: (_, __) => IconButton(
+                              icon: const Icon(
+                                Icons.favorite_border,
+                                color: Colors.black87,
+                                size: 22,
+                              ),
+                              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                              padding: EdgeInsets.zero,
+                              onPressed: () {},
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
                 flexibleSpace: FlexibleSpaceBar(
+                  collapseMode: CollapseMode.parallax,
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Base pure white background
+                      // Base pure white background (covers full appbar including status bar)
                       Container(color: Colors.white),
 
-                      // Full uncropped photo seamlessly blending into pure white background
-                      if (product.photo.isNotEmpty)
-                        Positioned.fill(
-                          child: CachedImage(
-                            imageUrl: product.photo,
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.contain,
-                            heroTag: 'product_photo_${product.id}',
-                            placeholderColor: Colors.white,
-                            errorWidget: Container(
-                              color: Colors.white,
-                              child: const Center(
-                                child: Icon(
-                                  Icons.fastfood,
-                                  size: 80,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        Container(
-                          color: Colors.white,
-                          child: const Center(
-                            child: Icon(
-                              Icons.fastfood,
-                              size: 80,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                      // Favorite button
+                      // 1x1 Square photo area positioned cleanly below status bar
                       Positioned(
-                        top: 50,
-                        right: 16,
-                        child: Consumer(
-                          builder: (context, ref, child) {
-                            final favoriteMenuId = product.menuTemplateId ?? product.id;
-                            final isFavAsync =
-                                ref.watch(isFavoriteProvider(favoriteMenuId));
-                            return isFavAsync.when(
-                              data: (isFav) => CircleAvatar(
-                                radius: 24,
-                                backgroundColor: Colors.white,
-                                child: IconButton(
-                                  icon: Icon(
-                                    isFav ? Icons.favorite : Icons.favorite_border,
-                                    color: isFav ? Colors.red : Colors.black,
+                        top: topPadding,
+                        left: 0,
+                        right: 0,
+                        height: screenWidth,
+                        child: GestureDetector(
+                          onTap: product.photo.isNotEmpty
+                              ? () => _openZoomableImage(context, product.photo, product.name)
+                              : null,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (product.photo.isNotEmpty)
+                                CachedImage(
+                                  imageUrl: product.photo,
+                                  width: screenWidth,
+                                  height: screenWidth,
+                                  fit: BoxFit.contain,
+                                  heroTag: 'product_photo_${product.id}',
+                                  placeholderColor: Colors.white,
+                                  errorWidget: Container(
+                                    color: Colors.white,
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.fastfood,
+                                        size: 80,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                   ),
-                                  onPressed: () async {
-                                    if (!AuthGuard.requireLogin(context, ref)) {
-                                      return;
-                                    }
-
-                                    try {
-                                      final isNowFavorite = await ref
-                                          .read(favoriteControllerProvider.notifier)
-                                          .toggleFavorite(
-                                            favoriteMenuId,
-                                            product.name,
-                                            product.price,
-                                            menuTemplateId: product.menuTemplateId ?? productId,
-                                            branchId: _effectiveBranchId(product));
-                                      ref.invalidate(
-                                          profile_favorites.favoritesProvider);
-                                      ref.invalidate(isFavoriteProvider(favoriteMenuId));
-
-                                      if (context.mounted) {
-                                        final isId = ref.read(appLanguageProvider) == AppLanguage.indonesia;
-                                        Helpers.showCustomAlert(
-                                          context,
-                                          isNowFavorite
-                                              ? (isId ? 'Menu ditambahkan ke favorit' : 'Menu added to favorites')
-                                              : (isId ? 'Menu dihapus dari favorit' : 'Menu removed from favorites'),
-                                          isSuccess: isNowFavorite,
-                                          bottomOffset: 12,
-                                          includeBottomPadding: false,
-                                        );
-                                      }
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        Helpers.showCustomAlert(
-                                          context,
-                                          _friendlyFavoriteError(e),
-                                          isSuccess: false,
-                                          duration: const Duration(seconds: 2),
-                                          bottomOffset: 12,
-                                          includeBottomPadding: false,
-                                        );
-                                      }
-                                    }
-                                  },
-                                ),
-                              ),
-                              loading: () => const CircleAvatar(
-                                radius: 24,
-                                backgroundColor: Colors.white,
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                              error: (_, __) => CircleAvatar(
-                                radius: 24,
-                                backgroundColor: Colors.white,
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.favorite_border,
-                                    color: Colors.black,
+                                )
+                              else
+                                Container(
+                                  color: Colors.white,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.fastfood,
+                                      size: 80,
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                  onPressed: () {},
                                 ),
-                              ));
-                          },
+
+                              // Subtle zoom action indicator pill at bottom right of photo
+                              if (product.photo.isNotEmpty)
+                                Positioned(
+                                  bottom: 12,
+                                  right: 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.6),
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.15),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.zoom_in_rounded,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Zoom',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -640,13 +714,18 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
   }
 
   Widget _buildLoadingSkeleton() {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final topPadding = mediaQuery.padding.top;
+    final headerHeight = screenWidth + topPadding;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
         physics: const NeverScrollableScrollPhysics(),
         slivers: [
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: headerHeight,
             pinned: true,
             backgroundColor: const Color(0xFFDD2222),
             leading: Padding(
@@ -659,10 +738,22 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                 child: const AppBackButton(color: Colors.black87),
               ),
             ),
-            flexibleSpace: const FlexibleSpaceBar(
-              background: ShimmerLoading(
-                width: double.infinity,
-                height: 280,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(color: Colors.white),
+                  Positioned(
+                    top: topPadding,
+                    left: 0,
+                    right: 0,
+                    height: screenWidth,
+                    child: ShimmerLoading(
+                      width: screenWidth,
+                      height: screenWidth,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -1415,5 +1506,205 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     } catch (_) {
       // The cart request still carries branchId even if local branch metadata fails to load.
     }
+  }
+
+  void _openZoomableImage(
+    BuildContext context,
+    String imageUrl,
+    String productName,
+  ) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.95),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return _ProductZoomViewer(
+            imageUrl: imageUrl,
+            productName: productName,
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+  }
+}
+
+class _ProductZoomViewer extends StatefulWidget {
+  final String imageUrl;
+  final String productName;
+
+  const _ProductZoomViewer({
+    required this.imageUrl,
+    required this.productName,
+  });
+
+  @override
+  State<_ProductZoomViewer> createState() => _ProductZoomViewerState();
+}
+
+class _ProductZoomViewerState extends State<_ProductZoomViewer> {
+  final TransformationController _transformationController =
+      TransformationController();
+  TapDownDetails? _doubleTapDetails;
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  void _handleDoubleTapDown(TapDownDetails details) {
+    _doubleTapDetails = details;
+  }
+
+  void _handleDoubleTap() {
+    if (_transformationController.value != Matrix4.identity()) {
+      _transformationController.value = Matrix4.identity();
+    } else {
+      final position = _doubleTapDetails?.localPosition ?? Offset.zero;
+      final x = -position.dx * 1.5;
+      final y = -position.dy * 1.5;
+      final zoomed = Matrix4.identity()
+        ..storage[0] = 2.5
+        ..storage[5] = 2.5
+        ..storage[12] = x
+        ..storage[13] = y;
+      _transformationController.value = zoomed;
+    }
+  }
+
+  void _resetZoom() {
+    setState(() {
+      _transformationController.value = Matrix4.identity();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          // Dismiss on tapping blank space if not zoomed
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () {
+                if (_transformationController.value == Matrix4.identity()) {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+
+          // Zoomable image with pinch and double-tap gestures
+          Center(
+            child: GestureDetector(
+              onDoubleTapDown: _handleDoubleTapDown,
+              onDoubleTap: _handleDoubleTap,
+              child: InteractiveViewer(
+                transformationController: _transformationController,
+                minScale: 0.8,
+                maxScale: 5.0,
+                clipBehavior: Clip.none,
+                child: CachedImage(
+                  imageUrl: widget.imageUrl,
+                  fit: BoxFit.contain,
+                  placeholderColor: Colors.transparent,
+                ),
+              ),
+            ),
+          ),
+
+          // Top Header Bar
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.75),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                      tooltip: 'Tutup',
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        widget.productName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
+                      tooltip: 'Reset Zoom',
+                      onPressed: _resetZoom,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Bottom instruction pill
+          Positioned(
+            bottom: 24,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.zoom_in_rounded, color: Colors.white70, size: 16),
+                      SizedBox(width: 8),
+                      Text(
+                        'Cubit atau ketuk 2x untuk memperbesar',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
