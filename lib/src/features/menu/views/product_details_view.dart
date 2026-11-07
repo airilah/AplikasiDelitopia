@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/back_button_wrapper.dart';
@@ -46,6 +47,41 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
   Branch? _activeBranch;
   double? _activeBranchDistance;
   bool _hasInitializedBranch = false;
+  double? _photoAspectRatio;
+  String? _lastResolvedPhotoUrl;
+
+  void _resolveImageAspectRatio(String photoUrl) {
+    if (photoUrl.isEmpty) return;
+    final resolved = resolveImageUrl(photoUrl);
+    if (resolved.isEmpty) return;
+
+    final provider = CachedNetworkImageProvider(resolved);
+    final stream = provider.resolve(const ImageConfiguration());
+    late final ImageStreamListener listener;
+    listener = ImageStreamListener(
+      (ImageInfo info, bool synchronousCall) {
+        final w = info.image.width;
+        final h = info.image.height;
+        if (h > 0) {
+          final ratio = w / h;
+          if (_photoAspectRatio != ratio) {
+            if (synchronousCall) {
+              _photoAspectRatio = ratio;
+            } else if (mounted) {
+              setState(() {
+                _photoAspectRatio = ratio;
+              });
+            }
+          }
+        }
+        stream.removeListener(listener);
+      },
+      onError: (_, __) {
+        stream.removeListener(listener);
+      },
+    );
+    stream.addListener(listener);
+  }
 
   @override
   void dispose() {
@@ -106,7 +142,6 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
     final topPadding = mediaQuery.padding.top;
-    final headerHeight = screenWidth + topPadding;
 
     return BackButtonWrapper(
       child: Scaffold(
@@ -118,10 +153,18 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
               });
             }
 
+            if (product.photo.isNotEmpty && _lastResolvedPhotoUrl != product.photo) {
+              _lastResolvedPhotoUrl = product.photo;
+              _resolveImageAspectRatio(product.photo);
+            }
+
+            final photoHeight = (screenWidth / (_photoAspectRatio ?? (500 / 356))).clamp(200.0, screenWidth);
+            final dynamicHeaderHeight = photoHeight + topPadding;
+
             return CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: headerHeight,
+                expandedHeight: dynamicHeaderHeight,
                 pinned: true,
                 elevation: 0,
                 backgroundColor: const Color(0xFFDD2222),
@@ -248,24 +291,21 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                       // Base pure white background (covers full appbar including status bar)
                       Container(color: Colors.white),
 
-                      // 1x1 Square photo area positioned cleanly below status bar
+                      // Photo area positioned cleanly below status bar without excessive margins
                       Positioned(
                         top: topPadding,
                         left: 0,
                         right: 0,
-                        height: screenWidth,
+                        height: photoHeight,
                         child: GestureDetector(
                           onTap: product.photo.isNotEmpty
                               ? () => _openZoomableImage(context, product.photo, product.name)
                               : null,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              if (product.photo.isNotEmpty)
-                                CachedImage(
+                          child: product.photo.isNotEmpty
+                              ? CachedImage(
                                   imageUrl: product.photo,
                                   width: screenWidth,
-                                  height: screenWidth,
+                                  height: photoHeight,
                                   fit: BoxFit.contain,
                                   heroTag: 'product_photo_${product.id}',
                                   placeholderColor: Colors.white,
@@ -280,8 +320,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                                     ),
                                   ),
                                 )
-                              else
-                                Container(
+                              : Container(
                                   color: Colors.white,
                                   child: const Center(
                                     child: Icon(
@@ -291,48 +330,6 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                                     ),
                                   ),
                                 ),
-
-                              // Subtle zoom action indicator pill at bottom right of photo
-                              if (product.photo.isNotEmpty)
-                                Positioned(
-                                  bottom: 12,
-                                  right: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.6),
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.15),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.zoom_in_rounded,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Zoom',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
                         ),
                       ),
                     ],
@@ -341,7 +338,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -717,7 +714,8 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
     final topPadding = mediaQuery.padding.top;
-    final headerHeight = screenWidth + topPadding;
+    final skeletonPhotoHeight = (screenWidth / (500 / 356)).clamp(200.0, screenWidth);
+    final headerHeight = skeletonPhotoHeight + topPadding;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -747,10 +745,10 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                     top: topPadding,
                     left: 0,
                     right: 0,
-                    height: screenWidth,
+                    height: skeletonPhotoHeight,
                     child: ShimmerLoading(
                       width: screenWidth,
-                      height: screenWidth,
+                      height: skeletonPhotoHeight,
                     ),
                   ),
                 ],
@@ -1619,28 +1617,26 @@ class _ProductZoomViewerState extends State<_ProductZoomViewer> {
             ),
           ),
 
-          // Top Header Bar
+          // Top Header Bar (fully transparent without dark gradient overlay)
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: SafeArea(
               child: Container(
+                color: Colors.transparent,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.75),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                        size: 28,
+                        shadows: [
+                          Shadow(color: Colors.black87, blurRadius: 6),
+                        ],
+                      ),
                       tooltip: 'Tutup',
                       onPressed: () => Navigator.of(context).pop(),
                     ),
@@ -1652,53 +1648,26 @@ class _ProductZoomViewerState extends State<_ProductZoomViewer> {
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
+                          shadows: [
+                            Shadow(color: Colors.black87, blurRadius: 6),
+                          ],
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
+                      icon: const Icon(
+                        Icons.refresh_rounded,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(color: Colors.black87, blurRadius: 6),
+                        ],
+                      ),
                       tooltip: 'Reset Zoom',
                       onPressed: _resetZoom,
                     ),
                   ],
-                ),
-              ),
-            ),
-          ),
-
-          // Bottom instruction pill
-          Positioned(
-            bottom: 24,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.65),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.zoom_in_rounded, color: Colors.white70, size: 16),
-                      SizedBox(width: 8),
-                      Text(
-                        'Cubit atau ketuk 2x untuk memperbesar',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ),
