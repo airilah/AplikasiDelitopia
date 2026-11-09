@@ -1831,16 +1831,32 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
     final idx = sequence.indexOf(status);
     if (idx != -1) return idx;
 
-    // Handle mapping aliases for delivery
+    // Handle mapping aliases and intermediate transitions
+    if (status == OrderStatus.confirmed) {
+      final prepIdx = sequence.indexOf(OrderStatus.preparing);
+      if (prepIdx != -1) return prepIdx;
+    }
+
     if (order.isDelivery) {
       if (status == OrderStatus.readyForPickup || status == OrderStatus.ready) {
-        // Kitchen finished preparing food, food is ready for driver pickup / courier heading to outlet
+        // Kitchen finished preparing food / driver heading to outlet
         return sequence.indexOf(OrderStatus.pickingUp);
+      }
+      if (status == OrderStatus.pickedUp || status == OrderStatus.outForDelivery) {
+        return sequence.indexOf(OrderStatus.inDelivery);
       }
     }
 
-    if (status == OrderStatus.ready && order.isTakeAway) {
-      return sequence.indexOf(OrderStatus.readyForPickup);
+    if (order.isTakeAway) {
+      if (status == OrderStatus.ready) {
+        return sequence.indexOf(OrderStatus.readyForPickup);
+      }
+    }
+
+    if (!order.isDelivery && !order.isTakeAway) {
+      if (status == OrderStatus.readyForPickup) {
+        return sequence.indexOf(OrderStatus.ready);
+      }
     }
 
     return -1;
@@ -1851,10 +1867,8 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
       return [
         OrderStatus.pendingPayment,
         OrderStatus.paid,
-        OrderStatus.confirmed,
         OrderStatus.preparing,
         OrderStatus.pickingUp,
-        OrderStatus.pickedUp,
         OrderStatus.inDelivery,
         OrderStatus.completed,
       ];
@@ -1862,7 +1876,6 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
       return [
         OrderStatus.pendingPayment,
         OrderStatus.paid,
-        OrderStatus.confirmed,
         OrderStatus.preparing,
         OrderStatus.readyForPickup,
         OrderStatus.completed,
@@ -1871,7 +1884,6 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
       return [
         OrderStatus.pendingPayment,
         OrderStatus.paid,
-        OrderStatus.confirmed,
         OrderStatus.preparing,
         OrderStatus.ready,
         OrderStatus.completed,

@@ -158,7 +158,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
               _resolveImageAspectRatio(product.photo);
             }
 
-            final photoHeight = (screenWidth / (_photoAspectRatio ?? (500 / 356))).clamp(200.0, screenWidth);
+            final photoHeight = (screenWidth / (_photoAspectRatio ?? 1.0)).clamp(200.0, screenWidth);
             final dynamicHeaderHeight = photoHeight + topPadding;
 
             return CustomScrollView(
@@ -288,10 +288,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Base pure white background (covers full appbar including status bar)
-                      Container(color: Colors.white),
-
-                      // Photo area positioned cleanly below status bar without excessive margins
+                      // Photo area positioned cleanly below status bar (exact 1x1, zero extra background padding)
                       Positioned(
                         top: topPadding,
                         left: 0,
@@ -306,28 +303,21 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                                   imageUrl: product.photo,
                                   width: screenWidth,
                                   height: photoHeight,
-                                  fit: BoxFit.contain,
+                                  fit: BoxFit.cover,
                                   heroTag: 'product_photo_${product.id}',
-                                  placeholderColor: Colors.white,
-                                  errorWidget: Container(
-                                    color: Colors.white,
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.fastfood,
-                                        size: 80,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  color: Colors.white,
-                                  child: const Center(
+                                  errorWidget: const Center(
                                     child: Icon(
                                       Icons.fastfood,
                                       size: 80,
                                       color: Colors.grey,
                                     ),
+                                  ),
+                                )
+                              : const Center(
+                                  child: Icon(
+                                    Icons.fastfood,
+                                    size: 80,
+                                    color: Colors.grey,
                                   ),
                                 ),
                         ),
@@ -338,7 +328,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -714,7 +704,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
     final topPadding = mediaQuery.padding.top;
-    final skeletonPhotoHeight = (screenWidth / (500 / 356)).clamp(200.0, screenWidth);
+    final skeletonPhotoHeight = screenWidth;
     final headerHeight = skeletonPhotoHeight + topPadding;
 
     return Scaffold(
