@@ -206,20 +206,19 @@ class OrderStatus {
       case pendingPayment:   return isEn ? 'Awaiting Payment' : 'Menunggu Pembayaran';
       case paymentFailed:    return isEn ? 'Payment Failed' : 'Pembayaran Gagal';
       case expired:          return isEn ? 'Expired' : 'Kedaluwarsa';
-      case paid:             return isEn ? 'Awaiting Confirmation' : 'Menunggu Konfirmasi';
+      case paid:             return isEn ? 'Payment Success' : 'Pembayaran Berhasil';
       case confirmed:        return isEn ? 'Order Accepted' : 'Pesanan Diterima';
       case rejected:         return isEn ? 'Order Rejected' : 'Pesanan Ditolak';
       case preparing:        return isEn ? 'Preparing Order' : 'Sedang Disiapkan';
       case ready:            return isEn ? 'Ready to Serve' : 'Siap Disajikan';
-      case readyForPickup:   return type == 'delivery' ? (isEn ? 'Ready for Driver' : 'Siap Diambil Kurir') : (isEn ? 'Ready for Pickup' : 'Siap Diambil');
+      case readyForPickup:   return type == 'delivery' ? (isEn ? 'Ready for Driver' : 'Siap Diambil Kurir') : (isEn ? 'Ready at Counter' : 'Siap Diambil di Counter');
       case pickingUp:        return isEn ? 'Driver Heading to Restaurant' : 'Kurir Menuju Restoran';
       case pickedUp:         return isEn ? 'Picked Up by Driver' : 'Pesanan Diambil Kurir';
       case inDelivery:
       case outForDelivery:   return isEn ? 'Out for Delivery' : 'Dalam Pengiriman';
       case completed:
-        if (type == 'delivery')   return isEn ? 'Order Delivered' : 'Pesanan Terkirim';
-        if (type == 'takeaway' || type == 'take_away' || type == 'pickup') return isEn ? 'Picked Up' : 'Sudah Diambil';
-        return isEn ? 'Completed' : 'Selesai';
+        if (type == 'delivery') return isEn ? 'Order Delivered' : 'Pesanan Terkirim';
+        return isEn ? 'Completed' : 'Pesanan Selesai';
       case cancelled:        return isEn ? 'Cancelled' : 'Dibatalkan';
       default:
         return raw.replaceAll('_', ' ').split(' ').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '').join(' ');

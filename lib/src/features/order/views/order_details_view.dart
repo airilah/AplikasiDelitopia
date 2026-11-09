@@ -819,14 +819,18 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
             : 'Estimated ready at ±$targetStr';
       }
     } else {
-      // Sebelum pesanan diterima (Menunggu Pembayaran / Menunggu Dikonfirmasi)
+      // Sebelum pesanan diterima (Menunggu Pembayaran / Pembayaran Berhasil)
       accentColor = const Color(0xFFDD6B20);
       lightBg = const Color(0xFFFFFBF5);
       borderColor = const Color(0xFFFFEDD5);
       cardIcon = Icons.schedule_rounded;
       subtitle = isIndo
-          ? 'Menunggu pesanan diterima'
-          : 'Waiting for order acceptance';
+          ? (order.isPendingPayment
+              ? 'Menunggu pembayaran'
+              : 'Pembayaran berhasil, menunggu disiapkan')
+          : (order.isPendingPayment
+              ? 'Waiting for payment'
+              : 'Payment verified, waiting for preparation');
     }
 
     return Container(
@@ -1909,7 +1913,7 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
             ? (isIndo
                 ? 'Pesanan Siap Diambil Kurir'
                 : 'Ready for Driver Pickup')
-            : (isIndo ? 'Siap Diambil' : 'Ready for Pickup');
+            : (isIndo ? 'Siap Diambil di Counter' : 'Ready at Counter');
       case OrderStatus.pickingUp:
         return isIndo ? 'Kurir Menuju Restoran' : 'Courier Heading to Outlet';
       case OrderStatus.pickedUp:
@@ -1920,9 +1924,6 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
       case OrderStatus.completed:
         if (order.isDelivery) {
           return isIndo ? 'Pesanan Terkirim' : 'Order Delivered';
-        }
-        if (order.isTakeAway) {
-          return isIndo ? 'Sudah Diambil' : 'Picked Up';
         }
         return isIndo ? 'Pesanan Selesai' : 'Completed';
       default:
@@ -1939,22 +1940,22 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
             : 'Please make payment to continue';
       case OrderStatus.paid:
         return isIndo
-            ? 'Menunggu konfirmasi restoran'
-            : 'Waiting for restaurant confirmation';
+            ? 'Pembayaran berhasil diverifikasi'
+            : 'Payment verified successfully';
       case OrderStatus.confirmed:
         return isIndo
             ? 'Restoran menerima pesanan Anda'
             : 'Restaurant accepted your order';
       case OrderStatus.preparing:
-        return isIndo ? 'Dapur sedang menyiapkan' : 'Kitchen is preparing';
+        return isIndo ? 'Dapur sedang menyiapkan pesanan' : 'Kitchen is preparing';
       case OrderStatus.ready:
         return isIndo
-            ? 'Makanan siap di meja Anda'
+            ? 'Makanan siap disajikan ke meja Anda'
             : 'Food is ready at your table';
       case OrderStatus.readyForPickup:
         return isIndo
-            ? 'Silakan ambil di outlet'
-            : 'Please pick up at the outlet';
+            ? 'Silakan ambil di counter restoran'
+            : 'Please pick up at the outlet counter';
       case OrderStatus.pickingUp:
         return isIndo
             ? 'Kurir sedang dalam perjalanan ke restoran'
@@ -1966,11 +1967,11 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
       case OrderStatus.inDelivery:
       case OrderStatus.outForDelivery:
         return isIndo
-            ? 'Kurir sedang mengantar pesanan'
+            ? 'Kurir sedang mengantar pesanan ke lokasimu'
             : 'Courier is delivering your order';
       case OrderStatus.completed:
         return isIndo
-            ? 'Terima kasih sudah memesan!'
+            ? 'Pesanan telah selesai dinikmati'
             : 'Thank you for ordering!';
       default:
         return null;

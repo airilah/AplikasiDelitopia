@@ -922,7 +922,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
           break;
         case 'paid':
         case 'paid_waiting_confirmation':
-          text = isEn ? 'Confirming' : 'Tunggu Konfirmasi';
+          text = isEn ? 'Paid' : 'Pembayaran Berhasil';
           break;
         case 'confirmed':
         case 'accepted':
@@ -936,21 +936,25 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
           break;
         case 'ready':
         case 'ready_for_pickup':
-          text = isEn ? 'Ready' : 'Siap';
+          text = order.isTakeAway
+              ? (isEn ? 'Ready at Counter' : 'Siap Di Counter')
+              : (isEn ? 'Ready to Serve' : 'Siap Disajikan');
           break;
         case 'picking_up':
         case 'picking_up_driver':
-          text = isEn ? 'Driver OTW' : 'Kurir OTW';
+          text = isEn ? 'Driver OTW' : 'Kurir Menuju Resto';
           break;
         case 'picked_up':
           text = isEn ? 'Picked Up' : 'Diambil';
           break;
         case 'in_delivery':
         case 'out_for_delivery':
-          text = isEn ? 'Delivering' : 'Diantar';
+          text = isEn ? 'Delivering' : 'Dalam Pengiriman';
           break;
         case 'completed':
-          text = isEn ? 'Completed' : 'Selesai';
+          text = order.isDelivery
+              ? (isEn ? 'Delivered' : 'Pesanan Terkirim')
+              : (isEn ? 'Completed' : 'Pesanan Selesai');
           break;
         case 'cancelled':
           text = isEn ? 'Cancelled' : 'Dibatalkan';
@@ -1508,9 +1512,15 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
     final status = order.status.toLowerCase().trim();
     final isIndo = lang == AppLanguage.indonesia;
 
-    // Ready for dine-in or takeaway pickup -> Confirm received
-    if ((status == 'ready' || status == 'ready_for_pickup') &&
-        !order.isDelivery) {
+    // Ready for dine-in or takeaway pickup, or delivered by courier -> Confirm received
+    final canConfirmReceived = (!order.isDelivery &&
+            (status == 'ready' || status == 'ready_for_pickup')) ||
+        (order.isDelivery &&
+            (status == 'in_delivery' ||
+                status == 'out_for_delivery' ||
+                status == 'picked_up'));
+
+    if (canConfirmReceived) {
       return OutlinedButton(
         onPressed: () async {
           final confirmed = await AppDialog.showConfirm(
