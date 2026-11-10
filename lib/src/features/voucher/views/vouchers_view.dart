@@ -911,32 +911,32 @@ class _VouchersViewState extends ConsumerState<VouchersView>
       final dt = DateTime.parse(dateStr);
       final months = lang == AppLanguage.english
           ? [
-              'January',
-              'February',
-              'March',
-              'April',
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
               'May',
-              'June',
-              'July',
-              'August',
-              'September',
-              'October',
-              'November',
-              'December'
+              'Jun',
+              'Jul',
+              'Aug',
+              'Sep',
+              'Oct',
+              'Nov',
+              'Dec'
             ]
           : [
-              'Januari',
-              'Februari',
-              'Maret',
-              'April',
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
               'Mei',
-              'Juni',
-              'Juli',
-              'Agustus',
-              'September',
-              'Oktober',
-              'November',
-              'Desember'
+              'Jun',
+              'Jul',
+              'Agu',
+              'Sep',
+              'Okt',
+              'Nov',
+              'Des'
             ];
       return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
     } catch (_) {
@@ -1096,6 +1096,9 @@ class _VouchersViewState extends ConsumerState<VouchersView>
 
   Widget _buildMyVoucherCard(DetailVoucher detailVoucher) {
     final voucher = detailVoucher.voucher!;
+    final effectiveExpiryDate = (detailVoucher.expiryDate != null && detailVoucher.expiryDate!.isNotEmpty)
+        ? detailVoucher.expiryDate
+        : voucher.endDate;
     final isExpired = _isVoucherExpired(detailVoucher);
     final isUsed = detailVoucher.status == 'used';
     final isPendingActivation = !isUsed &&
@@ -1144,7 +1147,7 @@ class _VouchersViewState extends ConsumerState<VouchersView>
                       ),
                       // Baris 2: Nama Brand - s.d End Date
                       Text(
-                        '${voucher.displayBrandName}${voucher.endDate != null && voucher.endDate!.isNotEmpty ? ' - ${tr.get('valid_until_short', ref.watch(appLanguageProvider))} ${_formatDateHeader(voucher.endDate, ref.watch(appLanguageProvider))}' : ''}',
+                        '${voucher.displayBrandName}${effectiveExpiryDate != null && effectiveExpiryDate.isNotEmpty ? ' - ${tr.get('valid_until_short', ref.watch(appLanguageProvider))} ${_formatDateHeader(effectiveExpiryDate, ref.watch(appLanguageProvider))}' : ''}',
                         style: TextStyle(
                           fontSize: 11.5,
                           color: isDimmed ? Colors.grey[500] : const Color(0xFF1E293B),
@@ -1204,32 +1207,32 @@ class _VouchersViewState extends ConsumerState<VouchersView>
       final date = DateTime.parse(dateStr).toLocal();
       final months = lang == AppLanguage.english
           ? [
-              'January',
-              'February',
-              'March',
-              'April',
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
               'May',
-              'June',
-              'July',
-              'August',
-              'September',
-              'October',
-              'November',
-              'December'
+              'Jun',
+              'Jul',
+              'Aug',
+              'Sep',
+              'Oct',
+              'Nov',
+              'Dec'
             ]
           : [
-              'Januari',
-              'Februari',
-              'Maret',
-              'April',
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
               'Mei',
-              'Juni',
-              'Juli',
-              'Agustus',
-              'September',
-              'Oktober',
-              'November',
-              'Desember'
+              'Jun',
+              'Jul',
+              'Agu',
+              'Sep',
+              'Okt',
+              'Nov',
+              'Des'
             ];
       return '${date.day} ${months[date.month - 1]} ${date.year}';
     } catch (e) {
@@ -2975,6 +2978,59 @@ class _VoucherQrRedemptionSheetState
     );
   }
 
+  String _formatExpiryDescription(
+      String description, DetailVoucher? detailVoucher, AppLanguage lang) {
+    if (description.isEmpty) return description;
+    final expiry = detailVoucher?.expiryDate;
+    if (expiry != null && expiry.isNotEmpty) {
+      try {
+        final date = DateTime.parse(expiry).toLocal();
+        final months = lang == AppLanguage.english
+            ? [
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec'
+              ]
+            : [
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'Mei',
+                'Jun',
+                'Jul',
+                'Agu',
+                'Sep',
+                'Okt',
+                'Nov',
+                'Des'
+              ];
+        final formatted = '${date.day} ${months[date.month - 1]} ${date.year}';
+        String result = description.replaceAll(
+          RegExp(r'Masa berlaku voucher sampai [^\.\n]+', caseSensitive: false),
+          'Masa berlaku voucher sampai $formatted',
+        );
+        result = result.replaceAll(
+          RegExp(r'Voucher validity until [^\.\n]+', caseSensitive: false),
+          'Voucher validity until $formatted',
+        );
+        return result;
+      } catch (_) {
+        return description;
+      }
+    }
+    return description;
+  }
+
   Widget _buildQrView(
     BuildContext context,
     AppLanguage lang,
@@ -3028,7 +3084,11 @@ class _VoucherQrRedemptionSheetState
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        voucher.description,
+                        _formatExpiryDescription(
+                          voucher.description,
+                          widget.detailVoucher,
+                          lang,
+                        ),
                         textAlign: TextAlign.left,
                         style: TextStyle(
                           color: Colors.grey[700],

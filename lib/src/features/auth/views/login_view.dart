@@ -393,10 +393,11 @@ class _LoginViewState extends ConsumerState<LoginView> {
                       color: Color(0xFFDD2222),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.restaurant_menu_rounded,
-                      color: Colors.white,
-                      size: 46,
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 46,
+                      height: 46,
+                      fit: BoxFit.contain,
                     ),
                   ),
                   const SizedBox(height: 24),

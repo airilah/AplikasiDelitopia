@@ -1702,12 +1702,12 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
       }
       final months = lang == AppLanguage.english
           ? [
-              'January', 'February', 'March', 'April', 'May', 'June',
-              'July', 'August', 'September', 'October', 'November', 'December'
+              'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
             ]
           : [
-              'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-              'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+              'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+              'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
             ];
       return '${date.day} ${months[date.month - 1]} ${date.year}';
     } catch (_) {
