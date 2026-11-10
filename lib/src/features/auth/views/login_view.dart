@@ -9,7 +9,6 @@ import '../../../core/routes/app_router.dart';
 import '../../../core/utils/helpers.dart';
 import '../services/auth_service.dart';
 import '../utils/auth_flow_utils.dart';
-
 import '../widgets/google_phone_link_sheet.dart';
 
 class LoginView extends ConsumerStatefulWidget {
@@ -24,10 +23,11 @@ class LoginView extends ConsumerStatefulWidget {
 class _LoginViewState extends ConsumerState<LoginView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordFocusNode = FocusNode();
   final _formKey = GlobalKey<FormState>();
 
   bool _isLoading = false;
-  bool _showEmailForm = false;
+  bool _isPasswordStep = false;
   bool _obscurePassword = true;
   // ignore: unused_field
   String? _errorMessage;
@@ -36,7 +36,36 @@ class _LoginViewState extends ConsumerState<LoginView> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
+  }
+
+  void _handleNextStep() {
+    final email = _emailController.text.trim();
+    final valid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+    if (email.isEmpty) {
+      Helpers.showError(
+        context,
+        tr.get('email_required', ref.read(appLanguageProvider)),
+      );
+      return;
+    }
+    if (!valid) {
+      Helpers.showError(
+        context,
+        tr.get('email_invalid', ref.read(appLanguageProvider)),
+      );
+      return;
+    }
+    setState(() {
+      _isPasswordStep = true;
+      _errorMessage = null;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _passwordFocusNode.requestFocus();
+      }
+    });
   }
 
   Future<void> _handleEmailLogin() async {
@@ -49,7 +78,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
     try {
       await ref.read(authServiceProvider).login(
             _emailController.text.trim(),
-            _passwordController.text);
+            _passwordController.text,
+          );
       if (!mounted) return;
 
       refreshAuthScopedProviders(ref);
@@ -286,19 +316,22 @@ class _LoginViewState extends ConsumerState<LoginView> {
     context.go(
       destination != null && destination.isNotEmpty
           ? destination
-          : AppRouter.navigation);
+          : AppRouter.navigation,
+    );
   }
 
   void _goToPhoneLogin() {
     context.go(
       '${AppRouter.phoneAuth}?mode=login'
-      '${_returnToQuery()}');
+      '${_returnToQuery()}',
+    );
   }
 
   void _goToRegister() {
     context.go(
       '${AppRouter.register}'
-      '${_returnToQuery(prefix: '?')}');
+      '${_returnToQuery(prefix: '?')}',
+    );
   }
 
   String _returnToQuery({String prefix = '&'}) {
@@ -311,165 +344,122 @@ class _LoginViewState extends ConsumerState<LoginView> {
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.sizeOf(context).height -
-                  MediaQuery.paddingOf(context).top -
-                  MediaQuery.paddingOf(context).bottom -
-                  52,
-            ),
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed: () => _showEmailForm
-                        ? setState(() {
-                            _showEmailForm = false;
+    return PopScope(
+      canPop: !_isPasswordStep,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_isPasswordStep) {
+          setState(() {
+            _isPasswordStep = false;
+            _errorMessage = null;
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.sizeOf(context).height -
+                    MediaQuery.paddingOf(context).top -
+                    MediaQuery.paddingOf(context).bottom -
+                    44,
+              ),
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      onPressed: () {
+                        if (_isPasswordStep) {
+                          setState(() {
+                            _isPasswordStep = false;
                             _errorMessage = null;
-                          })
-                        : context.go(AppRouter.navigation),
-                    icon: Icon(_showEmailForm ? Icons.arrow_back : Icons.close),
-                  ),
-                ),
-                const SizedBox(height: 48),
-                Container(
-                  width: 104,
-                  height: 104,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFDD2222),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.restaurant_menu_rounded,
-                    color: Colors.white,
-                    size: 54,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  _showEmailForm
-                      ? tr.get('login_with_email_title', lang)
-                      : tr.get('login_title', lang),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF202124),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _showEmailForm
-                      ? tr.get('login_with_email_subtitle', lang)
-                      : tr.get('login_subtitle', lang),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.35,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                if (_showEmailForm) _buildEmailForm() else _buildAuthChoices(),
-                const SizedBox(height: 36),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      tr.get('dont_have_account', lang),
-                      style: TextStyle(color: Colors.grey.shade600),
+                          });
+                        } else {
+                          context.go(AppRouter.navigation);
+                        }
+                      },
+                      icon: Icon(_isPasswordStep ? Icons.arrow_back : Icons.close),
                     ),
-                    TextButton(
-                      onPressed: _isLoading ? null : _goToRegister,
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, 0),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFDD2222),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.restaurant_menu_rounded,
+                      color: Colors.white,
+                      size: 46,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    tr.get('login_title', lang),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF202124),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    tr.get('login_subtitle', lang),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.35,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  _buildForm(lang),
+                  const SizedBox(height: 28),
+                  _buildDivider(lang),
+                  const SizedBox(height: 20),
+                  _buildQuickLoginOptions(lang),
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        tr.get('dont_have_account', lang),
+                        style: TextStyle(color: Colors.grey.shade600),
                       ),
-                      child: Text(
-                        tr.get('register', lang),
-                        style: const TextStyle(
-                          color: Color(0xFFDD2222),
-                          fontWeight: FontWeight.normal,
+                      TextButton(
+                        onPressed: _isLoading ? null : _goToRegister,
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          tr.get('register', lang),
+                          style: const TextStyle(
+                            color: Color(0xFFDD2222),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ));
+      ),
+    );
   }
 
-  Widget _buildAuthChoices() {
-    final lang = ref.watch(appLanguageProvider);
-
-    return Column(
-      children: [
-        _AuthButton(
-          iconWidget: const FaIcon(
-            FontAwesomeIcons.whatsapp,
-            color: Color(0xFF25D366),
-            size: 22,
-          ),
-          label: tr.get('login_with_phone', lang),
-          onPressed: _isLoading ? null : _goToPhoneLogin,
-        ),
-        const SizedBox(height: 14),
-        _AuthButton(
-          iconWidget: const Icon(
-            Icons.mail_outline_rounded,
-            color: Color(0xFFDD2222),
-            size: 22,
-          ),
-          label: tr.get('login_with_email_password', lang),
-          onPressed: _isLoading
-              ? null
-              : () => setState(() {
-                    _showEmailForm = true;
-                    _errorMessage = null;
-                  }),
-        ),
-        const SizedBox(height: 14),
-        _AuthButton(
-          iconWidget: Image.asset(
-            'assets/icons/google.png',
-            width: 22,
-            height: 22,
-            errorBuilder: (_, __, ___) => const FaIcon(
-              FontAwesomeIcons.google,
-              color: Color(0xFFEA4335),
-              size: 20,
-            ),
-          ),
-          label: tr.get('login_with_google', lang, fallback: 'Masuk dengan Google'),
-          onPressed: _isLoading ? null : _handleGoogleSignIn,
-          loading: _isLoading,
-        ),
-        if (defaultTargetPlatform == TargetPlatform.iOS ||
-            defaultTargetPlatform == TargetPlatform.macOS) ...[
-          const SizedBox(height: 14),
-          _AuthButton(
-            icon: Icons.apple,
-            label: tr.get('login_with_apple', lang, fallback: 'Masuk dengan Apple'),
-            onPressed: _isLoading ? null : _handleAppleSignIn,
-            loading: _isLoading,
-          ),
-        ],
-      ]);
-  }
-
-  Widget _buildEmailForm() {
-    final lang = ref.watch(appLanguageProvider);
-
+  Widget _buildForm(AppLanguage lang) {
     return Form(
       key: _formKey,
       child: Column(
@@ -477,73 +467,185 @@ class _LoginViewState extends ConsumerState<LoginView> {
           TextFormField(
             controller: _emailController,
             enabled: !_isLoading,
+            readOnly: _isPasswordStep,
             keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
+            textInputAction: _isPasswordStep ? TextInputAction.next : TextInputAction.done,
+            onFieldSubmitted: (_) =>
+                _isPasswordStep ? _passwordFocusNode.requestFocus() : _handleNextStep(),
             decoration: _inputDecoration(
               hint: 'Email',
               icon: Icons.email_outlined,
+              suffix: _isPasswordStep
+                  ? TextButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              setState(() {
+                                _isPasswordStep = false;
+                              });
+                            },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        lang == AppLanguage.indonesia ? 'Ubah' : 'Change',
+                        style: const TextStyle(
+                          color: Color(0xFFDD2222),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
             validator: (value) {
               final email = value?.trim() ?? '';
-              final valid =
-                  RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+              final valid = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
               if (email.isEmpty) return tr.get('email_required', lang);
               if (!valid) return tr.get('email_invalid', lang);
               return null;
             },
           ),
-          const SizedBox(height: 14),
-          TextFormField(
-            controller: _passwordController,
-            enabled: !_isLoading,
-            obscureText: _obscurePassword,
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _isLoading ? null : _handleEmailLogin(),
-            decoration: _inputDecoration(
-              hint: 'Password',
-              icon: Icons.lock_outline,
-              suffix: IconButton(
-                onPressed: _isLoading
-                    ? null
-                    : () => setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        }),
-                icon: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
+          if (_isPasswordStep) ...[
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _passwordController,
+              focusNode: _passwordFocusNode,
+              enabled: !_isLoading,
+              obscureText: _obscurePassword,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _isLoading ? null : _handleEmailLogin(),
+              decoration: _inputDecoration(
+                hint: 'Password',
+                icon: Icons.lock_outline,
+                suffix: IconButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () => setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          }),
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                  ),
+                ),
+              ),
+              validator: (value) {
+                if ((value ?? '').isEmpty) {
+                  return tr.get('password_required', lang);
+                }
+                return null;
+              },
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _isLoading ? null : () => context.go(AppRouter.forgotPassword),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  tr.get('forgot_password', lang),
+                  style: const TextStyle(
+                    color: Color(0xFFDD2222),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ),
-            validator: (value) {
-              if ((value ?? '').isEmpty) {
-                return tr.get('password_required', lang);
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 20),
-          _AuthButton(
-            icon: Icons.login_rounded,
-            label: tr.get('login', lang),
-            onPressed: _isLoading ? null : _handleEmailLogin,
-            filled: true,
-            loading: _isLoading,
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed:
-                _isLoading ? null : () => context.go(AppRouter.forgotPassword),
-            child: Text(
-              tr.get('forgot_password', lang),
-              style: const TextStyle(
-                color: Color(0xFFDD2222),
-                fontWeight: FontWeight.normal,
-              ),
+          ],
+          const SizedBox(height: 16),
+          if (!_isPasswordStep)
+            _AuthButton(
+              label: tr.get('continue', lang, fallback: 'Lanjut'),
+              onPressed: _isLoading ? null : _handleNextStep,
+              filled: true,
+            )
+          else
+            _AuthButton(
+              icon: Icons.login_rounded,
+              label: tr.get('login', lang),
+              onPressed: _isLoading ? null : _handleEmailLogin,
+              filled: true,
+              loading: _isLoading,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider(AppLanguage lang) {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Text(
+            tr.get('or_login_with', lang, fallback: 'atau masuk dengan'),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w500,
             ),
           ),
+        ),
+        Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
+      ],
+    );
+  }
+
+  Widget _buildQuickLoginOptions(AppLanguage lang) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _SocialQuickButton(
+                iconWidget: Image.asset(
+                  'assets/icons/google.png',
+                  width: 20,
+                  height: 20,
+                  errorBuilder: (_, __, ___) => const FaIcon(
+                    FontAwesomeIcons.google,
+                    color: Color(0xFFEA4335),
+                    size: 18,
+                  ),
+                ),
+                label: 'Google',
+                onPressed: _isLoading ? null : _handleGoogleSignIn,
+                loading: _isLoading,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _SocialQuickButton(
+                iconWidget: const FaIcon(
+                  FontAwesomeIcons.whatsapp,
+                  color: Color(0xFF25D366),
+                  size: 20,
+                ),
+                label: 'WhatsApp',
+                onPressed: _isLoading ? null : _goToPhoneLogin,
+              ),
+            ),
+          ],
+        ),
+        if (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS) ...[
+          const SizedBox(height: 12),
+          _SocialQuickButton(
+            iconWidget: const Icon(Icons.apple, size: 22, color: Colors.black),
+            label: 'Apple',
+            onPressed: _isLoading ? null : _handleAppleSignIn,
+            loading: _isLoading,
+          ),
         ],
-      ));
+      ],
+    );
   }
 
   InputDecoration _inputDecoration({
@@ -577,12 +679,75 @@ class _LoginViewState extends ConsumerState<LoginView> {
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: Color(0xFFDD2222), width: 1.4),
-      ));
+      ),
+    );
+  }
+}
+
+class _SocialQuickButton extends StatelessWidget {
+  final Widget iconWidget;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool loading;
+
+  const _SocialQuickButton({
+    required this.iconWidget,
+    required this.label,
+    required this.onPressed,
+    this.loading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF202124),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          side: BorderSide(color: Colors.grey.shade300, width: 1.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFDD2222)),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  iconWidget,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF202124),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
   }
 }
 
 class _AuthButton extends StatelessWidget {
-  final Widget? iconWidget;
   final IconData? icon;
   final String label;
   final VoidCallback? onPressed;
@@ -590,7 +755,6 @@ class _AuthButton extends StatelessWidget {
   final bool loading;
 
   const _AuthButton({
-    this.iconWidget,
     this.icon,
     required this.label,
     required this.onPressed,
@@ -606,17 +770,14 @@ class _AuthButton extends StatelessWidget {
             height: 22,
             child: CircularProgressIndicator(
               strokeWidth: 2.2,
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFDD2222)),
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           )
         : Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (iconWidget != null)
-                iconWidget!
-              else if (icon != null)
-                Icon(icon, size: 22),
-              const SizedBox(width: 12),
+              if (icon != null) Icon(icon, size: 22),
+              if (icon != null) const SizedBox(width: 12),
               Flexible(
                 child: Text(
                   label,
@@ -624,7 +785,8 @@ class _AuthButton extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-            ]);
+            ],
+          );
 
     if (filled) {
       return SizedBox(
@@ -645,7 +807,8 @@ class _AuthButton extends StatelessWidget {
             ),
           ),
           child: child,
-        ));
+        ),
+      );
     }
 
     return SizedBox(
@@ -667,6 +830,7 @@ class _AuthButton extends StatelessWidget {
           ),
         ),
         child: child,
-      ));
+      ),
+    );
   }
 }
