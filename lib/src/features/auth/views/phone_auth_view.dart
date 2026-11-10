@@ -80,11 +80,36 @@ class _PhoneAuthViewState extends ConsumerState<PhoneAuthView> {
         '${_returnToQuery()}');
     } catch (e) {
       if (!mounted) return;
+      final raw = e.toString().replaceAll('Exception: ', '');
       setState(() {
-        _message = e.toString().replaceAll('Exception: ', '');
+        _message = _simplifyErrorMessage(raw);
         _isLoading = false;
       });
     }
+  }
+
+  String _simplifyErrorMessage(String raw) {
+    final lower = raw.toLowerCase();
+    if (lower.contains('disconnected') ||
+        lower.contains('terputus') ||
+        lower.contains('offline') ||
+        lower.contains('whatsapp') ||
+        lower.contains('gateway')) {
+      return 'WhatsApp sedang gangguan. Coba lagi atau gunakan Google/Email.';
+    }
+    if (lower.contains('60 detik') || lower.contains('tunggu') || lower.contains('cooldown')) {
+      return 'Tunggu sebentar sebelum meminta kode lagi.';
+    }
+    if (lower.contains('sudah terdaftar') || lower.contains('already registered')) {
+      return 'Nomor sudah terdaftar. Silakan masuk.';
+    }
+    if (lower.contains('belum terdaftar') || lower.contains('not registered')) {
+      return 'Nomor belum terdaftar. Silakan daftar.';
+    }
+    if (lower.contains('tidak valid') || lower.contains('invalid')) {
+      return 'Nomor ponsel tidak valid.';
+    }
+    return raw;
   }
 
   String _returnToQuery() {
@@ -303,7 +328,7 @@ class _PhoneAuthViewState extends ConsumerState<PhoneAuthView> {
                                       },
                                       icon: const Icon(Icons.arrow_back_rounded, size: 16),
                                       label: const Text(
-                                        'Gunakan Masuk Google / Email',
+                                        'Masuk dengan Google / Email',
                                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                                       ),
                                       style: OutlinedButton.styleFrom(
