@@ -233,51 +233,90 @@ class _PhoneAuthViewState extends ConsumerState<PhoneAuthView> {
                                 ),
                               ],
                             ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  width: 34,
-                                  height: 34,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFDD2222).withValues(alpha: 0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.error_outline_rounded,
-                                    color: Color(0xFFDD2222),
-                                    size: 19,
-                                  ),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 34,
+                                      height: 34,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDD2222).withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.error_outline_rounded,
+                                        color: Color(0xFFDD2222),
+                                        size: 19,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        _message!,
+                                        style: const TextStyle(
+                                          color: Color(0xFF1E293B),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    InkWell(
+                                      onTap: () => setState(() => _message = null),
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.close_rounded,
+                                          size: 15,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _message!,
-                                    style: const TextStyle(
-                                      color: Color(0xFF1E293B),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      height: 1.35,
+                                if (_message!.toLowerCase().contains('whatsapp') ||
+                                    _message!.toLowerCase().contains('offline') ||
+                                    _message!.toLowerCase().contains('terputus') ||
+                                    _message!.toLowerCase().contains('disconnected') ||
+                                    _message!.toLowerCase().contains('tunggu 60')) ...[
+                                  const SizedBox(height: 10),
+                                  Divider(height: 1, color: Colors.grey.shade200),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        if (context.canPop()) {
+                                          context.pop();
+                                        } else {
+                                          context.go(AppRouter.login);
+                                        }
+                                      },
+                                      icon: const Icon(Icons.arrow_back_rounded, size: 16),
+                                      label: const Text(
+                                        'Gunakan Masuk Google / Email',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xFFDD2222),
+                                        side: BorderSide(color: const Color(0xFFDD2222).withValues(alpha: 0.3)),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                InkWell(
-                                  onTap: () => setState(() => _message = null),
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.close_rounded,
-                                      size: 15,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ),
+                                ],
                               ],
                             ),
                           ),
