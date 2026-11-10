@@ -167,7 +167,8 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                 expandedHeight: dynamicHeaderHeight,
                 pinned: true,
                 elevation: 0,
-                backgroundColor: const Color(0xFFDD2222),
+                backgroundColor: Colors.white,
+                surfaceTintColor: Colors.transparent,
                 systemOverlayStyle: SystemUiOverlayStyle.dark,
                 leading: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -288,12 +289,13 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Photo area positioned cleanly below status bar (exact 1x1, zero extra background padding)
+                      Container(color: Colors.white),
+                      // Photo area positioned cleanly below status bar (zero extra bottom margin)
                       Positioned(
                         top: topPadding,
                         left: 0,
                         right: 0,
-                        height: photoHeight,
+                        bottom: 0,
                         child: GestureDetector(
                           onTap: product.photo.isNotEmpty
                               ? () => _openZoomableImage(context, product.photo, product.name)
@@ -302,7 +304,6 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                               ? CachedImage(
                                   imageUrl: product.photo,
                                   width: screenWidth,
-                                  height: photoHeight,
                                   fit: BoxFit.cover,
                                   heroTag: 'product_photo_${product.id}',
                                   errorWidget: const Center(
@@ -328,7 +329,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -715,7 +716,9 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
           SliverAppBar(
             expandedHeight: headerHeight,
             pinned: true,
-            backgroundColor: const Color(0xFFDD2222),
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
+            systemOverlayStyle: SystemUiOverlayStyle.dark,
             leading: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Container(
@@ -735,7 +738,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                     top: topPadding,
                     left: 0,
                     right: 0,
-                    height: skeletonPhotoHeight,
+                    bottom: 0,
                     child: ShimmerLoading(
                       width: screenWidth,
                       height: skeletonPhotoHeight,
