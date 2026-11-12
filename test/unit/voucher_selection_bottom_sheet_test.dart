@@ -151,7 +151,7 @@ void main() {
 
       expect(find.text('Voucher Kasir Fisik'), findsOneWidget);
       expect(
-        find.text('Hanya berlaku untuk penukaran langsung di kasir outlet'),
+        find.text('Hanya berlaku penukaran langsung di outlet'),
         findsOneWidget,
       );
     });

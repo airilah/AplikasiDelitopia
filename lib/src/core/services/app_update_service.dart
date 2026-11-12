@@ -227,34 +227,47 @@ final appUpdateServiceProvider = Provider<AppUpdateService>((ref) {
   return AppUpdateService();
 });
 
-/// StateNotifier that manages, auto-fetches, and auto-polls AppMaintenanceInfo in real time
+/// StateNotifier that manages, auto-fetches, and auto-polls AppMaintenanceInfo responsibly.
 class AppMaintenanceNotifier extends StateNotifier<AppMaintenanceInfo?>
     with WidgetsBindingObserver {
+  static const Duration _minimumResumeCheckGap = Duration(seconds: 60);
+  static const Duration _activeMaintenancePollInterval = Duration(seconds: 20);
+
   final AppUpdateService _service;
   Timer? _pollingTimer;
+  DateTime? _lastCheckedAt;
+  bool _isFetching = false;
+
+  @visibleForTesting
+  bool get isPollingActive => _pollingTimer?.isActive ?? false;
 
   AppMaintenanceNotifier(this._service) : super(null) {
     WidgetsBinding.instance.addObserver(this);
-    fetchMaintenance();
-    _startPolling();
+    fetchMaintenance(force: true);
   }
 
-  void _startPolling() {
-    _pollingTimer?.cancel();
-    // Poll every 6 detik agar perubahan dari website admin langsung sinkron di layar HP
-    _pollingTimer = Timer.periodic(const Duration(seconds: 6), (_) {
-      fetchMaintenance();
-    });
+  void _syncPolling() {
+    if (state?.isActive == true) {
+      if (_pollingTimer?.isActive ?? false) return;
+      // Poll periodically only while maintenance mode is active so the app auto-recovers once lifted.
+      _pollingTimer = Timer.periodic(_activeMaintenancePollInterval, (_) {
+        fetchMaintenance(force: true);
+      });
+    } else {
+      _pollingTimer?.cancel();
+      _pollingTimer = null;
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Saat admin berpindah dari browser web ke aplikasi HP/emulator
       fetchMaintenance();
-      _startPolling();
-    } else if (state == AppLifecycleState.paused) {
+      _syncPolling();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
       _pollingTimer?.cancel();
+      _pollingTimer = null;
     }
   }
 
@@ -262,21 +275,34 @@ class AppMaintenanceNotifier extends StateNotifier<AppMaintenanceInfo?>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pollingTimer?.cancel();
+    _pollingTimer = null;
     super.dispose();
   }
 
   @override
   set state(AppMaintenanceInfo? value) {
     super.state = value;
+    _syncPolling();
   }
 
   void setMaintenance(AppMaintenanceInfo? info) {
     super.state = info;
+    _syncPolling();
   }
 
-  Future<void> fetchMaintenance() async {
+  Future<void> fetchMaintenance({bool force = false}) async {
+    final now = DateTime.now();
+    if (_isFetching) return;
+    if (!force &&
+        _lastCheckedAt != null &&
+        now.difference(_lastCheckedAt!) < _minimumResumeCheckGap) {
+      return;
+    }
+
+    _isFetching = true;
     try {
       final result = await _service.checkUpdate();
+      _lastCheckedAt = DateTime.now();
       final fresh = result.maintenance ?? const AppMaintenanceInfo(isActive: false);
 
       // Hanya trigger rebuild jika ada nilai yang benar-benar berubah
@@ -287,8 +313,11 @@ class AppMaintenanceNotifier extends StateNotifier<AppMaintenanceInfo?>
           state!.launchDate != fresh.launchDate) {
         super.state = fresh;
       }
+      _syncPolling();
     } catch (e) {
       debugPrint('⚠️ Error fetching maintenance status: $e');
+    } finally {
+      _isFetching = false;
     }
   }
 }

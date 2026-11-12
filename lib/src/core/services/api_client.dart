@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
@@ -32,7 +33,7 @@ final dioProvider = Provider<Dio>((ref) {
   }
 
   // Add interceptors
-  dio.interceptors.add(AuthInterceptor(ref));
+  dio.interceptors.add(AuthInterceptor(ref, dio));
   if (kDebugMode) {
     dio.interceptors.add(LoggingInterceptor());
   }
@@ -40,11 +41,31 @@ final dioProvider = Provider<Dio>((ref) {
   return dio;
 });
 
-// Auth interceptor to add JWT token
+// Auth interceptor to add JWT token and handle single-flight 401 refresh
 class AuthInterceptor extends Interceptor {
-  final Ref ref;
+  static const String _retryFlagKey = '_retriedAfterRefresh';
 
-  AuthInterceptor(this.ref);
+  final Ref ref;
+  final Dio _dio;
+  final Future<String?> Function(String currentToken)? refreshTokenOverride;
+  Completer<String?>? _refreshCompleter;
+
+  AuthInterceptor(
+    this.ref,
+    this._dio, {
+    @visibleForTesting this.refreshTokenOverride,
+  });
+
+  static bool isAuthLifecycleEndpoint(String path) {
+    final normalized = path.toLowerCase();
+    return normalized.contains('/auth/login') ||
+        normalized.contains('/auth/admin-login') ||
+        normalized.contains('/auth/register') ||
+        normalized.contains('/auth/refresh') ||
+        normalized.contains('/auth/social-login') ||
+        normalized.contains('/auth/phone') ||
+        normalized.contains('loginwithgoogle');
+  }
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -64,6 +85,128 @@ class AuthInterceptor extends Interceptor {
       }
     }
     handler.next(options);
+  }
+
+  @override
+  Future<void> onError(
+      DioException err, ErrorInterceptorHandler handler) async {
+    final statusCode = err.response?.statusCode;
+    final options = err.requestOptions;
+
+    if (statusCode != 401 ||
+        options.extra[_retryFlagKey] == true ||
+        isAuthLifecycleEndpoint(options.path)) {
+      handler.next(err);
+      return;
+    }
+
+    final storage = ref.read(storageServiceProvider);
+    final currentToken = storage.getAuthToken();
+    if (currentToken == null || currentToken.isEmpty) {
+      handler.next(err);
+      return;
+    }
+
+    final refreshedToken =
+        await _refreshAccessToken(currentToken, options.baseUrl);
+    if (refreshedToken == null || refreshedToken.isEmpty) {
+      handler.next(err);
+      return;
+    }
+
+    try {
+      final retryOptions = options.copyWith(
+        headers: {
+          ...options.headers,
+          'Authorization': 'Bearer $refreshedToken',
+        },
+        extra: {
+          ...options.extra,
+          _retryFlagKey: true,
+        },
+      );
+      final response = await _dio.fetch<dynamic>(retryOptions);
+      handler.resolve(response);
+    } on DioException catch (retryErr) {
+      handler.next(retryErr);
+    } catch (_) {
+      handler.next(err);
+    }
+  }
+
+  Future<String?> _refreshAccessToken(
+      String expiredToken, String baseUrl) async {
+    if (_refreshCompleter != null) {
+      return _refreshCompleter!.future;
+    }
+
+    final completer = Completer<String?>();
+    _refreshCompleter = completer;
+
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final latestToken = storage.getAuthToken();
+      if (latestToken != null &&
+          latestToken.isNotEmpty &&
+          latestToken != expiredToken) {
+        completer.complete(latestToken);
+        return latestToken;
+      }
+
+      final newToken = refreshTokenOverride != null
+          ? await refreshTokenOverride!(expiredToken)
+          : await _requestRefreshFromApi(expiredToken, baseUrl);
+
+      if (newToken != null && newToken.isNotEmpty) {
+        await storage.saveAuthToken(newToken);
+        completer.complete(newToken);
+        return newToken;
+      }
+
+      await storage.deleteAuthToken();
+      completer.complete(null);
+      return null;
+    } catch (_) {
+      await ref.read(storageServiceProvider).deleteAuthToken();
+      completer.complete(null);
+      return null;
+    } finally {
+      _refreshCompleter = null;
+    }
+  }
+
+  Future<String?> _requestRefreshFromApi(
+      String token, String baseUrl) async {
+    final refreshDio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl.isNotEmpty ? baseUrl : ApiConstants.baseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 15),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ),
+    );
+    refreshDio.httpClientAdapter = _dio.httpClientAdapter;
+
+    final response = await refreshDio.post<dynamic>(ApiConstants.refreshToken);
+    final payload = response.data;
+    if (payload is Map<String, dynamic>) {
+      final nested = payload['data'];
+      if (nested is Map<String, dynamic>) {
+        final accessToken = nested['access_token']?.toString();
+        if (accessToken != null && accessToken.isNotEmpty) {
+          return accessToken;
+        }
+      }
+      final topLevel = payload['access_token']?.toString();
+      if (topLevel != null && topLevel.isNotEmpty) {
+        return topLevel;
+      }
+    }
+    return null;
   }
 }
 

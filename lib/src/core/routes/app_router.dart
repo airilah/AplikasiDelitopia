@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -574,19 +575,38 @@ class SplashView extends ConsumerStatefulWidget {
 }
 
 class _SplashViewState extends ConsumerState<SplashView> {
+  Timer? _splashTimer;
+  Completer<void>? _splashDelayCompleter;
+
   @override
   void initState() {
     super.initState();
     _checkAuthAndNavigate();
   }
 
+  @override
+  void dispose() {
+    _splashTimer?.cancel();
+    if (_splashDelayCompleter != null && !_splashDelayCompleter!.isCompleted) {
+      _splashDelayCompleter!.complete();
+    }
+    super.dispose();
+  }
+
   Future<void> _checkAuthAndNavigate() async {
     try {
       final updateService = AppUpdateService();
+      final delayCompleter = Completer<void>();
+      _splashDelayCompleter = delayCompleter;
+      _splashTimer = Timer(const Duration(milliseconds: 1800), () {
+        if (!delayCompleter.isCompleted) {
+          delayCompleter.complete();
+        }
+      });
 
       // Run minimum splash presentation and version check concurrently
       final results = await Future.wait([
-        Future.delayed(const Duration(milliseconds: 1800)),
+        delayCompleter.future,
         updateService.checkUpdate(),
       ]);
 

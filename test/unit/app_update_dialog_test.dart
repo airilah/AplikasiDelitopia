@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:delitopia_v2/src/core/services/app_update_service.dart';
 import 'package:delitopia_v2/src/core/widgets/app_update_dialog.dart';
@@ -19,9 +20,11 @@ void main() {
       );
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AppUpdateDialog(updateResult: updateResult),
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: AppUpdateDialog(updateResult: updateResult),
+            ),
           ),
         ),
       );
@@ -50,9 +53,11 @@ void main() {
       );
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AppUpdateDialog(updateResult: updateResult),
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: AppUpdateDialog(updateResult: updateResult),
+            ),
           ),
         ),
       );

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,6 +13,7 @@ import '../../shared/services/ui_schema_provider.dart';
 import '../../shared/models/user_model.dart';
 import '../services/push_notification_service.dart';
 import '../services/active_order_tracker.dart';
+import '../services/storage_service.dart';
 
 /// Keeps app data in sync with changes made from Delitopia Admin.
 class AdminDataAutoRefresh extends ConsumerStatefulWidget {
@@ -42,10 +44,13 @@ class _AdminDataAutoRefreshState extends ConsumerState<AdminDataAutoRefresh>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _startTimer();
-    
-    // Initialize push notifications and active order tracking
+
+    // Initialize push notifications only when Firebase has initialized, and start order tracking
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(pushNotificationServiceProvider).initialize();
+      if (!mounted) return;
+      if (Firebase.apps.isNotEmpty) {
+        ref.read(pushNotificationServiceProvider).initialize();
+      }
       final user = ref.read(services.currentUserProvider).valueOrNull;
       if (user != null) {
         ref.read(activeOrderTrackerProvider).startTracking(user.id);
@@ -65,9 +70,11 @@ class _AdminDataAutoRefreshState extends ConsumerState<AdminDataAutoRefresh>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _lifecycleState = state;
     if (state == AppLifecycleState.resumed) {
-      // Refresh rotated/missing tokens whenever the user returns to the app.
-      ref.read(pushNotificationServiceProvider).uploadToken();
-      _refreshAdminDrivenData(force: true);
+      // Refresh rotated/missing tokens whenever the user returns to the app, respecting cooldown.
+      if (Firebase.apps.isNotEmpty) {
+        ref.read(pushNotificationServiceProvider).uploadToken();
+      }
+      _refreshAdminDrivenData();
     }
   }
 
@@ -82,7 +89,8 @@ class _AdminDataAutoRefreshState extends ConsumerState<AdminDataAutoRefresh>
     _timer?.cancel();
     _timer = Timer.periodic(
       widget.refreshInterval,
-      (_) => _refreshAdminDrivenData());
+      (_) => _refreshAdminDrivenData(),
+    );
   }
 
   void _refreshAdminDrivenData({bool force = false}) {
@@ -99,15 +107,14 @@ class _AdminDataAutoRefreshState extends ConsumerState<AdminDataAutoRefresh>
 
     _lastRefreshAt = now;
 
+    // Batch 1: public catalog and shell metadata immediately
     ref
       ..invalidate(uiSchemaProvider)
-      ..invalidate(services.currentUserProvider)
       ..invalidate(services.bannersProvider)
       ..invalidate(services.categoriesProvider)
       ..invalidate(services.popularProductsProvider)
       ..invalidate(services.showcaseProductsProvider)
       ..invalidate(services.availableVouchersProvider)
-      ..invalidate(services.userVouchersProvider)
       ..invalidate(services.brandsProvider)
       ..invalidate(services.branchesProvider)
       ..invalidate(services.branchesByBrandProvider)
@@ -115,26 +122,39 @@ class _AdminDataAutoRefreshState extends ConsumerState<AdminDataAutoRefresh>
       ..invalidate(services.popularMenusProvider)
       ..invalidate(services.menusByCategoryProvider)
       ..invalidate(services.menusByBrandProvider)
-      ..invalidate(services.notificationsProvider)
       ..invalidate(services.qrCodesProvider)
       ..invalidate(services.nearbyBranchesProvider)
-      ..invalidate(services.userPointsBalanceProvider)
       ..invalidate(menusByBrandBranchProvider)
       ..invalidate(voucher.availableVouchersProvider)
-      ..invalidate(voucher.myVouchersProvider)
-      ..invalidate(voucher.myVouchersByStatusProvider)
-      ..invalidate(voucher.myActiveVouchersProvider)
-      ..invalidate(voucher.pointRedemptionVouchersProvider)
-      ..invalidate(voucher.cashPurchaseVouchersProvider)
-      ..invalidate(voucher.categorizedVouchersProvider)
-      ..invalidate(voucher.userPointsProvider)
-      ..invalidate(voucher.pointsHistoryProvider)
-      ..invalidate(pos.memberProfileProvider)
-      ..invalidate(pos.myVouchersProvider)
-      ..invalidate(order.orderHistoryProvider)
-      ..invalidate(order.activeOrdersProvider)
-      ..invalidate(order.completedOrdersProvider)
-      ..invalidate(order.orderDetailsProvider);
+      ..invalidate(voucher.categorizedVouchersProvider);
+
+    // Batch 2 (staggered): authenticated member and order providers only when signed in
+    final token = ref.read(storageServiceProvider).getAuthToken();
+    if (token == null || token.isEmpty) {
+      return;
+    }
+
+    Future<void>.delayed(const Duration(milliseconds: 250), () {
+      if (!mounted || _lifecycleState != AppLifecycleState.resumed) return;
+      ref
+        ..invalidate(services.currentUserProvider)
+        ..invalidate(services.userVouchersProvider)
+        ..invalidate(services.notificationsProvider)
+        ..invalidate(services.userPointsBalanceProvider)
+        ..invalidate(voucher.myVouchersProvider)
+        ..invalidate(voucher.myVouchersByStatusProvider)
+        ..invalidate(voucher.myActiveVouchersProvider)
+        ..invalidate(voucher.pointRedemptionVouchersProvider)
+        ..invalidate(voucher.cashPurchaseVouchersProvider)
+        ..invalidate(voucher.userPointsProvider)
+        ..invalidate(voucher.pointsHistoryProvider)
+        ..invalidate(pos.memberProfileProvider)
+        ..invalidate(pos.myVouchersProvider)
+        ..invalidate(order.orderHistoryProvider)
+        ..invalidate(order.activeOrdersProvider)
+        ..invalidate(order.completedOrdersProvider)
+        ..invalidate(order.orderDetailsProvider);
+    });
   }
 
   @override
@@ -144,7 +164,9 @@ class _AdminDataAutoRefreshState extends ConsumerState<AdminDataAutoRefresh>
       final user = next.valueOrNull;
       final prevUser = previous?.valueOrNull;
       if (user != null && prevUser?.id != user.id) {
-        ref.read(pushNotificationServiceProvider).uploadToken();
+        if (Firebase.apps.isNotEmpty) {
+          ref.read(pushNotificationServiceProvider).uploadToken();
+        }
         ref.read(activeOrderTrackerProvider).startTracking(user.id);
       } else if (user == null && prevUser != null) {
         ref.read(activeOrderTrackerProvider).stopTracking();

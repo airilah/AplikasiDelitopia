@@ -10,12 +10,14 @@ import 'src/core/routes/app_router.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/core/constants/app_constants.dart';
 import 'src/core/services/storage_service.dart';
+import 'src/core/services/error_reporting_service.dart';
 import 'src/core/widgets/admin_data_auto_refresh.dart';
 import 'firebase_options.dart';
 
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorReportingService.installGlobalHooks();
 
   // Tune Flutter Image Cache for instant display and higher in-memory retention
   PaintingBinding.instance.imageCache.maximumSize = 500;
