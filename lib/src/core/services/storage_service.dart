@@ -23,14 +23,17 @@ class StorageService {
   StorageService(this._prefs, this._secureStorage);
 
   /// Completes before the provider is exposed to the UI. This preserves the
-  /// existing synchronous token reads while migrating legacy tokens once.
+  /// existing synchronous token reads while migrating legacy plaintext tokens
+  /// from SharedPreferences into encrypted storage once.
   Future<void> initialize() async {
     try {
       final secureToken =
           await _secureStorage.read(key: AppConstants.keyAuthToken);
       if (secureToken != null && secureToken.isNotEmpty) {
         _authToken = secureToken;
-        await _prefs.setString(AppConstants.keyAuthToken, secureToken);
+        if (_prefs.containsKey(AppConstants.keyAuthToken)) {
+          await _prefs.remove(AppConstants.keyAuthToken);
+        }
         return;
       }
 
@@ -41,10 +44,10 @@ class StorageService {
           value: legacyToken,
         );
         _authToken = legacyToken;
+        await _prefs.remove(AppConstants.keyAuthToken);
       }
     } catch (_) {
-      // Keep the current session usable if a device's secure storage is
-      // temporarily unavailable; a later launch retries the migration.
+      // If secure storage is temporarily unavailable, fall back only in memory.
       _authToken = _prefs.getString(AppConstants.keyAuthToken);
     }
   }
@@ -55,9 +58,9 @@ class StorageService {
     try {
       await _secureStorage.write(key: AppConstants.keyAuthToken, value: token);
     } catch (_) {}
-    // Ensure SharedPreferences is always synchronized for backwards compatibility
-    // with services and components that read the token directly.
-    await _prefs.setString(AppConstants.keyAuthToken, token);
+    if (_prefs.containsKey(AppConstants.keyAuthToken)) {
+      await _prefs.remove(AppConstants.keyAuthToken);
+    }
   }
 
   String? getAuthToken() {

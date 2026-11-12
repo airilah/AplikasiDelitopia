@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/storage_service.dart';
@@ -29,16 +28,6 @@ class VoucherService {
           await _secureStorage.read(key: AppConstants.keyAuthToken);
       if (secureToken != null && secureToken.isNotEmpty) {
         return secureToken;
-      }
-    } catch (_) {}
-
-    // 3. Fallback to SharedPreferences
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final prefsToken = prefs.getString(AppConstants.keyAuthToken) ??
-          prefs.getString('auth_token');
-      if (prefsToken != null && prefsToken.isNotEmpty) {
-        return prefsToken;
       }
     } catch (_) {}
 

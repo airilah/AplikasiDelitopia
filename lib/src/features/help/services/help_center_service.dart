@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/app_constants.dart';
 import '../models/help_center_model.dart';
@@ -18,12 +17,6 @@ class HelpCenterService {
       if (secureToken != null && secureToken.isNotEmpty) {
         return secureToken;
       }
-    } catch (_) {}
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(AppConstants.keyAuthToken) ??
-          prefs.getString('auth_token');
     } catch (_) {}
 
     return null;
