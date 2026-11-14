@@ -158,7 +158,12 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
               _resolveImageAspectRatio(product.photo);
             }
 
-            final photoHeight = (screenWidth / (_photoAspectRatio ?? 1.0)).clamp(200.0, screenWidth);
+            final basePhotoHeight = screenWidth / (_photoAspectRatio ?? 1.0);
+            final isNearSquareOrPortrait =
+                (_photoAspectRatio == null || _photoAspectRatio! <= 1.05);
+            final bottomTrim = isNearSquareOrPortrait ? 42.0 : 0.0;
+            final photoHeight =
+                (basePhotoHeight - bottomTrim).clamp(200.0, screenWidth);
             final dynamicHeaderHeight = photoHeight + topPadding;
 
             return CustomScrollView(
@@ -296,17 +301,18 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        child: GestureDetector(
-                          onTap: product.photo.isNotEmpty
-                              ? () => _openZoomableImage(context, product.photo, product.name)
-                              : null,
-                          child: product.photo.isNotEmpty
-                              ? Center(
-                                  child: CachedImage(
+                        child: ClipRect(
+                          child: GestureDetector(
+                            onTap: product.photo.isNotEmpty
+                                ? () => _openZoomableImage(context, product.photo, product.name)
+                                : null,
+                            child: product.photo.isNotEmpty
+                                ? CachedImage(
                                     imageUrl: product.photo,
                                     width: screenWidth,
                                     height: photoHeight,
-                                    fit: BoxFit.contain,
+                                    fit: BoxFit.fitWidth,
+                                    alignment: Alignment.topCenter,
                                     heroTag: 'product_photo_${product.id}',
                                     placeholderColor: Colors.transparent,
                                     errorWidget: const Center(
@@ -316,15 +322,15 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                                         color: Colors.grey,
                                       ),
                                     ),
+                                  )
+                                : const Center(
+                                    child: Icon(
+                                      Icons.fastfood,
+                                      size: 80,
+                                      color: Colors.grey,
+                                    ),
                                   ),
-                                )
-                              : const Center(
-                                  child: Icon(
-                                    Icons.fastfood,
-                                    size: 80,
-                                    color: Colors.grey,
-                                  ),
-                                ),
+                          ),
                         ),
                       ),
                     ],
@@ -333,7 +339,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -709,7 +715,8 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
     final topPadding = mediaQuery.padding.top;
-    final skeletonPhotoHeight = screenWidth;
+    final skeletonPhotoHeight =
+        (screenWidth - 42.0).clamp(200.0, screenWidth);
     final headerHeight = skeletonPhotoHeight + topPadding;
 
     return Scaffold(

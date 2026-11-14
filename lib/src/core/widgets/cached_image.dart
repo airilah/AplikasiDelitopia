@@ -72,6 +72,7 @@ class CachedImage extends StatelessWidget {
   final double? width;
   final double? height;
   final BoxFit fit;
+  final Alignment alignment;
   final BorderRadius? borderRadius;
   final Widget? errorWidget;
   final Color? placeholderColor;
@@ -83,6 +84,7 @@ class CachedImage extends StatelessWidget {
     this.width,
     this.height,
     this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
     this.borderRadius,
     this.errorWidget,
     this.placeholderColor,
@@ -125,6 +127,7 @@ class CachedImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
+      alignment: alignment,
       fadeInDuration: const Duration(milliseconds: 100),
       fadeOutDuration: const Duration(milliseconds: 100),
       memCacheHeight: targetCacheHeight,
