@@ -110,6 +110,22 @@ class StorageService {
     return token == null || token.isEmpty ? null : token;
   }
 
+  Future<void> saveLastUploadedFcmToken({
+    required String token,
+    required int userId,
+  }) async {
+    await _prefs.setString('last_uploaded_fcm_token', token);
+    await _prefs.setInt('last_uploaded_fcm_user_id', userId);
+  }
+
+  String? getLastUploadedFcmToken() {
+    return _prefs.getString('last_uploaded_fcm_token');
+  }
+
+  int? getLastUploadedFcmUserId() {
+    return _prefs.getInt('last_uploaded_fcm_user_id');
+  }
+
   // User data
   Future<void> saveUserData(Map<String, dynamic> userData) async {
     await _prefs.setString(AppConstants.keyUserName, userData['name'] ?? '');

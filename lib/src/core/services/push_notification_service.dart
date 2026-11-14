@@ -345,18 +345,28 @@ class PushNotificationService {
         return false;
       }
 
+      final storage = _ref.read(storageServiceProvider);
+      final userId = await storage.getUserId();
+      if (userId == null) {
+        return false;
+      }
+
+      // Avoid re-uploading identical token for the same user repeatedly
+      final lastToken = storage.getLastUploadedFcmToken();
+      final lastUserId = storage.getLastUploadedFcmUserId();
+      if (refreshedToken == null && lastToken == token && lastUserId == userId) {
+        debugPrint('ℹ️ FCM token already up to date for user $userId, skipping redundant upload.');
+        return true;
+      }
+
       debugPrint('🔑 FCM token retrieved (${token.length} characters)');
 
-      final userId = await _ref.read(storageServiceProvider).getUserId();
-      if (userId != null) {
-        await _ref.read(authServiceProvider).updateFcmToken(userId, token);
-        await _ref
-            .read(storageServiceProvider)
-            .saveFcmRegistrationRevision(_fcmRegistrationRevision);
-        _tokenRetryTimer?.cancel();
-        _tokenRetryAttempt = 0;
-        debugPrint('✅ FCM Token uploaded successfully for User ID $userId');
-      }
+      await _ref.read(authServiceProvider).updateFcmToken(userId, token);
+      await storage.saveLastUploadedFcmToken(token: token, userId: userId);
+      await storage.saveFcmRegistrationRevision(_fcmRegistrationRevision);
+      _tokenRetryTimer?.cancel();
+      _tokenRetryAttempt = 0;
+      debugPrint('✅ FCM Token uploaded successfully for User ID $userId');
       return true;
     } catch (e) {
       debugPrint('⚠️ Failed to upload FCM token: $e');
@@ -410,11 +420,14 @@ class PushNotificationService {
 
   void _scheduleTokenRetry() {
     if (_tokenRetryTimer?.isActive ?? false) return;
-    final index = _tokenRetryAttempt.clamp(0, _tokenRetryDelays.length - 1);
-    final delay = _tokenRetryDelays[index];
+    if (_tokenRetryAttempt >= _tokenRetryDelays.length) {
+      debugPrint('⚠️ FCM token retry limit reached ($_tokenRetryAttempt). Pausing retry until next resume or token change.');
+      return;
+    }
+    final delay = _tokenRetryDelays[_tokenRetryAttempt];
     _tokenRetryAttempt++;
     _tokenRetryTimer = Timer(delay, uploadToken);
-    debugPrint('FCM token registration will retry in ${delay.inSeconds}s');
+    debugPrint('FCM token registration will retry in ${delay.inSeconds}s (attempt $_tokenRetryAttempt/${_tokenRetryDelays.length})');
   }
 
   Future<void> showLocalNotification({
