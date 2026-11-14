@@ -301,16 +301,20 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                               ? () => _openZoomableImage(context, product.photo, product.name)
                               : null,
                           child: product.photo.isNotEmpty
-                              ? CachedImage(
-                                  imageUrl: product.photo,
-                                  width: screenWidth,
-                                  fit: BoxFit.cover,
-                                  heroTag: 'product_photo_${product.id}',
-                                  errorWidget: const Center(
-                                    child: Icon(
-                                      Icons.fastfood,
-                                      size: 80,
-                                      color: Colors.grey,
+                              ? Center(
+                                  child: CachedImage(
+                                    imageUrl: product.photo,
+                                    width: screenWidth,
+                                    height: photoHeight,
+                                    fit: BoxFit.contain,
+                                    heroTag: 'product_photo_${product.id}',
+                                    placeholderColor: Colors.transparent,
+                                    errorWidget: const Center(
+                                      child: Icon(
+                                        Icons.fastfood,
+                                        size: 80,
+                                        color: Colors.grey,
+                                      ),
                                     ),
                                   ),
                                 )
