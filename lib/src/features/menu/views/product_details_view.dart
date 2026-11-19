@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -89,6 +90,42 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     super.dispose();
   }
 
+  Widget _buildHeaderCircleButton({required Widget child}) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.45),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.65),
+                width: 1.0,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
@@ -177,114 +214,94 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                 systemOverlayStyle: SystemUiOverlayStyle.dark,
                 leading: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
+                  child: _buildHeaderCircleButton(
                     child: const AppBackButton(color: Colors.black87),
                   ),
                 ),
                 actions: [
                   Padding(
                     padding: const EdgeInsets.only(right: 12.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.12),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Consumer(
-                        builder: (context, ref, child) {
-                          final favoriteMenuId = product.menuTemplateId ?? product.id;
-                          final isFavAsync =
-                              ref.watch(isFavoriteProvider(favoriteMenuId));
-                          return isFavAsync.when(
-                            data: (isFav) => IconButton(
-                              icon: Icon(
-                                isFav ? Icons.favorite : Icons.favorite_border,
-                                color: isFav ? Colors.red : Colors.black87,
-                                size: 22,
-                              ),
-                              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                              padding: EdgeInsets.zero,
-                              onPressed: () async {
-                                if (!AuthGuard.requireLogin(context, ref)) {
-                                  return;
-                                }
-
-                                try {
-                                  final isNowFavorite = await ref
-                                      .read(favoriteControllerProvider.notifier)
-                                      .toggleFavorite(
-                                        favoriteMenuId,
-                                        product.name,
-                                        product.price,
-                                        menuTemplateId: product.menuTemplateId ?? productId,
-                                        branchId: _effectiveBranchId(product));
-                                  ref.invalidate(
-                                      profile_favorites.favoritesProvider);
-                                  ref.invalidate(isFavoriteProvider(favoriteMenuId));
-
-                                  if (context.mounted) {
-                                    final isId = ref.read(appLanguageProvider) == AppLanguage.indonesia;
-                                    Helpers.showCustomAlert(
-                                      context,
-                                      isNowFavorite
-                                          ? (isId ? 'Menu ditambahkan ke favorit' : 'Menu added to favorites')
-                                          : (isId ? 'Menu dihapus dari favorit' : 'Menu removed from favorites'),
-                                      isSuccess: isNowFavorite,
-                                      bottomOffset: 12,
-                                      includeBottomPadding: false,
-                                    );
+                    child: Center(
+                      child: _buildHeaderCircleButton(
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final favoriteMenuId = product.menuTemplateId ?? product.id;
+                            final isFavAsync =
+                                ref.watch(isFavoriteProvider(favoriteMenuId));
+                            return isFavAsync.when(
+                              data: (isFav) => IconButton(
+                                icon: Icon(
+                                  isFav ? Icons.favorite : Icons.favorite_border,
+                                  color: isFav ? Colors.red : Colors.black87,
+                                  size: 22,
+                                ),
+                                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                                padding: EdgeInsets.zero,
+                                onPressed: () async {
+                                  if (!AuthGuard.requireLogin(context, ref)) {
+                                    return;
                                   }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    Helpers.showCustomAlert(
-                                      context,
-                                      _friendlyFavoriteError(e),
-                                      isSuccess: false,
-                                      duration: const Duration(seconds: 2),
-                                      bottomOffset: 12,
-                                      includeBottomPadding: false,
-                                    );
+
+                                  try {
+                                    final isNowFavorite = await ref
+                                        .read(favoriteControllerProvider.notifier)
+                                        .toggleFavorite(
+                                          favoriteMenuId,
+                                          product.name,
+                                          product.price,
+                                          menuTemplateId: product.menuTemplateId ?? productId,
+                                          branchId: _effectiveBranchId(product));
+                                    ref.invalidate(
+                                        profile_favorites.favoritesProvider);
+                                    ref.invalidate(isFavoriteProvider(favoriteMenuId));
+
+                                    if (context.mounted) {
+                                      final isId = ref.read(appLanguageProvider) == AppLanguage.indonesia;
+                                      Helpers.showCustomAlert(
+                                        context,
+                                        isNowFavorite
+                                            ? (isId ? 'Menu ditambahkan ke favorit' : 'Menu added to favorites')
+                                            : (isId ? 'Menu dihapus dari favorit' : 'Menu removed from favorites'),
+                                        isSuccess: isNowFavorite,
+                                        bottomOffset: 12,
+                                        includeBottomPadding: false,
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      Helpers.showCustomAlert(
+                                        context,
+                                        _friendlyFavoriteError(e),
+                                        isSuccess: false,
+                                        duration: const Duration(seconds: 2),
+                                        bottomOffset: 12,
+                                        includeBottomPadding: false,
+                                      );
+                                    }
                                   }
-                                }
-                              },
-                            ),
-                            loading: () => const SizedBox(
-                              width: 40,
-                              height: 40,
-                              child: Padding(
-                                padding: EdgeInsets.all(10.0),
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                },
                               ),
-                            ),
-                            error: (_, __) => IconButton(
-                              icon: const Icon(
-                                Icons.favorite_border,
-                                color: Colors.black87,
-                                size: 22,
+                              loading: () => const SizedBox(
+                                width: 40,
+                                height: 40,
+                                child: Padding(
+                                  padding: EdgeInsets.all(10.0),
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
                               ),
-                              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                              padding: EdgeInsets.zero,
-                              onPressed: () {},
-                            ),
-                          );
-                        },
+                              error: (_, __) => IconButton(
+                                icon: const Icon(
+                                  Icons.favorite_border,
+                                  color: Colors.black87,
+                                  size: 22,
+                                ),
+                                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                                padding: EdgeInsets.zero,
+                                onPressed: () {},
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -732,14 +749,24 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
             systemOverlayStyle: SystemUiOverlayStyle.dark,
             leading: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
+              child: _buildHeaderCircleButton(
                 child: const AppBackButton(color: Colors.black87),
               ),
             ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 12.0),
+                child: Center(
+                  child: _buildHeaderCircleButton(
+                    child: const Icon(
+                      Icons.favorite_border,
+                      color: Colors.black26,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
