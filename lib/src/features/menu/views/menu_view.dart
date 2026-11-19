@@ -582,7 +582,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                             ),
                           ),
                           const SliverToBoxAdapter(
-                            child: SizedBox(height: 10),
+                            child: SizedBox(height: 6),
                           ),
                           SliverList(
                             delegate: SliverChildBuilderDelegate(
@@ -2190,15 +2190,15 @@ class _MenuViewState extends ConsumerState<MenuView> {
 
   Widget _buildMenuItemRow(Menu menu) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 3.5),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 4,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 1.5),
           ),
         ],
       ),
@@ -2210,43 +2210,43 @@ class _MenuViewState extends ConsumerState<MenuView> {
           ),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Image
+                // Image (dikecilkan dari 90x90 ke 70x70)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    width: 90,
-                    height: 90,
+                    width: 70,
+                    height: 70,
                     color: Colors.grey[200],
                     child: Stack(
                       children: [
                         CachedImage(
                           imageUrl: menu.photo,
-                          width: 90,
-                          height: 90,
+                          width: 70,
+                          height: 70,
                           fit: BoxFit.cover,
                           heroTag: 'product_photo_${menu.id}',
                           errorWidget: Image.asset(
                             'assets/images/logo.png',
-                            width: 90,
-                            height: 90,
+                            width: 70,
+                            height: 70,
                             errorBuilder: (_, __, ___) => const Icon(
                               Icons.fastfood,
-                              size: 40,
+                              size: 28,
                               color: Colors.grey,
                             ),
                           ),
                         ),
                         if (menu.isPopular)
                           Positioned(
-                            top: 4,
-                            left: 4,
+                            top: 3,
+                            left: 3,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
+                                  horizontal: 4, vertical: 1.5),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFDD2222),
                                 borderRadius: BorderRadius.circular(4),
@@ -2256,16 +2256,16 @@ class _MenuViewState extends ConsumerState<MenuView> {
                                 children: [
                                   const Icon(
                                     Icons.local_fire_department,
-                                    size: 10,
+                                    size: 9,
                                     color: Colors.white,
                                   ),
-                                  const SizedBox(width: 2),
+                                  const SizedBox(width: 1.5),
                                   Text(
                                     tr.get('popular_badge',
                                         ref.watch(appLanguageProvider)),
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 9,
+                                      fontSize: 8.5,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -2277,36 +2277,37 @@ class _MenuViewState extends ConsumerState<MenuView> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
 
-                // Details
+                // Details (Space lebih rapat & compact)
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         menu.name,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 15,
+                          fontSize: 14,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Row(
                         children: [
                           if (menu.averageRating > 0) ...[
                             const Icon(
                               Icons.star_rounded,
-                              size: 14,
+                              size: 13,
                               color: Color(0xFFF59E0B),
                             ),
                             const SizedBox(width: 2),
                             Text(
                               menu.averageRating.toStringAsFixed(1),
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF0F172A),
                               ),
@@ -2316,28 +2317,28 @@ class _MenuViewState extends ConsumerState<MenuView> {
                               Text(
                                 '(${menu.reviewCount})',
                                 style: const TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
                                   color: Color(0xFF0F172A),
                                 ),
                               ),
                             ],
-                            const SizedBox(width: 5),
+                            const SizedBox(width: 4),
                             Text(
                               '•',
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 10,
                                 color: Colors.grey[400],
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(width: 5),
+                            const SizedBox(width: 4),
                           ],
                           Expanded(
                             child: Text(
                               menu.formattedSoldFor(ref.watch(appLanguageProvider)),
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 11.5,
                                 color: Color(0xFF0F172A),
                                 fontWeight: FontWeight.w500,
                               ),
@@ -2347,13 +2348,13 @@ class _MenuViewState extends ConsumerState<MenuView> {
                           ),
                         ],
                       ),
-                      // const SizedBox(height: 8),
+                      const SizedBox(height: 2),
                       Row(
                         children: [
                           Expanded(
                             child: PriceDisplayWidget.fromMenu(
                               menu: menu,
-                              fontSize: 16,
+                              fontSize: 15,
                               priceColor: const Color(0xFFDD2222),
                               showBadge: true,
                             ),
@@ -2362,29 +2363,28 @@ class _MenuViewState extends ConsumerState<MenuView> {
                           menu.canBeOrdered
                               ? Material(
                                   color: const Color(0xFFDD2222),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(6),
                                   child: InkWell(
                                     onTap: () {
                                       _addToCart(menu);
                                     },
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(6),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 8),
+                                      padding: const EdgeInsets.all(6),
                                       child: const Icon(
                                         Icons.add,
                                         color: Colors.white,
-                                        size: 15,
+                                        size: 14,
                                       ),
                                     ),
                                   ),
                                 )
                               : Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 6),
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(6),
                                     border:
                                         Border.all(color: Colors.grey[350]!),
                                   ),
@@ -2394,7 +2394,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                                     style: const TextStyle(
                                       color: Colors.grey,
                                       fontWeight: FontWeight.normal,
-                                      fontSize: 12,
+                                      fontSize: 11,
                                     ),
                                   ),
                                 ),

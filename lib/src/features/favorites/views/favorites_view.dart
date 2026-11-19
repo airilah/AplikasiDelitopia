@@ -54,8 +54,8 @@ class FavoritesView extends ConsumerWidget {
                   }
 
                   return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 2,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    elevation: 1.5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -88,7 +88,7 @@ class FavoritesView extends ConsumerWidget {
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(8),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -98,34 +98,34 @@ class FavoritesView extends ConsumerWidget {
                               child: menu.photo.isNotEmpty
                                   ? CachedImage(
                                       imageUrl: menu.photo,
-                                      width: 80,
-                                      height: 80,
+                                      width: 70,
+                                      height: 70,
                                       fit: BoxFit.cover,
                                       errorWidget: Image.asset(
                                         'assets/images/logo.png',
-                                        width: 80,
-                                        height: 80,
+                                        width: 70,
+                                        height: 70,
                                         errorBuilder: (_, __, ___) => const Icon(
                                           Icons.fastfood,
-                                          size: 38,
+                                          size: 28,
                                           color: Colors.grey,
                                         ),
                                       ),
                                     )
                                   : Container(
-                                      width: 80,
-                                      height: 80,
+                                      width: 70,
+                                      height: 70,
                                       color: Colors.grey[200],
                                       child: const Icon(
                                         Icons.fastfood,
-                                        size: 38,
+                                        size: 28,
                                         color: Colors.grey,
                                       ),
                                     ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
 
-                            // Menu Details (matching Gambar 3: Name, Rating/Sold, Price with discount badge)
+                            // Menu Details (matching compact style)
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,20 +134,20 @@ class FavoritesView extends ConsumerWidget {
                                   Text(
                                     menu.name,
                                     style: const TextStyle(
-                                      fontSize: 15.5,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFF0F172A),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 2),
                                   // Rating & Sold Row
                                   Row(
                                     children: [
                                       const Icon(
                                         Icons.star_rounded,
-                                        size: 15,
+                                        size: 13,
                                         color: Color(0xFFF59E0B),
                                       ),
                                       const SizedBox(width: 2),
@@ -156,7 +156,7 @@ class FavoritesView extends ConsumerWidget {
                                             ? menu.averageRating.toStringAsFixed(1)
                                             : '0.0',
                                         style: const TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 11.5,
                                           fontWeight: FontWeight.w700,
                                           color: Color(0xFF0F172A),
                                         ),
@@ -166,27 +166,27 @@ class FavoritesView extends ConsumerWidget {
                                         Text(
                                           '(${menu.reviewCount})',
                                           style: const TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 11.5,
                                             fontWeight: FontWeight.w500,
                                             color: Color(0xFF0F172A),
                                           ),
                                         ),
                                       ],
-                                      const SizedBox(width: 5),
+                                      const SizedBox(width: 4),
                                       Text(
                                         '•',
                                         style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 10,
                                           color: Colors.grey[400],
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      const SizedBox(width: 5),
+                                      const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
                                           menu.formattedSoldFor(lang),
                                           style: const TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 11.5,
                                             color: Color(0xFF0F172A),
                                             fontWeight: FontWeight.w500,
                                           ),
@@ -196,11 +196,11 @@ class FavoritesView extends ConsumerWidget {
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 4),
                                   // Price with strikethrough and discount percentage badge
                                   PriceDisplayWidget.fromMenu(
                                     menu: menu,
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     priceColor: const Color(0xFFDD2222),
                                     showBadge: true,
                                   ),
