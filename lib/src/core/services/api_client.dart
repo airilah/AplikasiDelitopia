@@ -7,6 +7,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/api_constants.dart';
 import 'storage_service.dart';
 
+// Static DNS fallback table if OS/Emulator DNS fails to resolve hostnames
+const Map<String, String> _dnsFallbackHosts = {
+  'aplikasi.mannagroup.id': '62.72.59.133',
+  'delitopia.mannagroup.id': '62.72.59.133',
+  'admin-aplikasi.mannagroup.id': '62.72.59.133',
+};
+
 // Provider for Dio instance
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(
@@ -20,13 +27,58 @@ final dioProvider = Provider<Dio>((ref) {
       },
     ));
 
-  if (!kIsWeb && kDebugMode) {
+  if (!kIsWeb) {
     dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-        // Allow self-signed certificate overrides exclusively during local debugging
-        client.badCertificateCallback =
-            (X509Certificate cert, String host, int port) => true;
+        if (kDebugMode) {
+          // Allow self-signed certificate overrides exclusively during local debugging
+          client.badCertificateCallback =
+              (X509Certificate cert, String host, int port) => true;
+        }
+        client.connectionFactory =
+            (Uri url, String? proxyHost, int? proxyPort) async {
+          final isHttps = url.scheme == 'https';
+          final port = url.hasPort ? url.port : (isHttps ? 443 : 80);
+          final host = url.host;
+
+          Future<Socket> connectWithDnsFallback() async {
+            Socket rawSocket;
+            try {
+              rawSocket = await Socket.connect(
+                host,
+                port,
+                timeout: const Duration(seconds: 10),
+              );
+            } on SocketException catch (e) {
+              final fallbackIp = _dnsFallbackHosts[host.toLowerCase()];
+              if (fallbackIp != null) {
+                if (kDebugMode) {
+                  print(
+                      '⚠️ DNS lookup gagal untuk $host (${e.message}), menggunakan IP fallback $fallbackIp');
+                }
+                rawSocket = await Socket.connect(
+                  fallbackIp,
+                  port,
+                  timeout: const Duration(seconds: 10),
+                );
+              } else {
+                rethrow;
+              }
+            }
+
+            if (isHttps) {
+              return await SecureSocket.secure(
+                rawSocket,
+                host: host,
+                onBadCertificate: (X509Certificate cert) => kDebugMode,
+              );
+            }
+            return rawSocket;
+          }
+
+          return ConnectionTask.fromSocket(connectWithDnsFallback(), () {});
+        };
         return client;
       },
     );
