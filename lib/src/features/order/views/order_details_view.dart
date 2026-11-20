@@ -1899,7 +1899,6 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
         OrderStatus.pendingPayment,
         OrderStatus.paid,
         OrderStatus.preparing,
-        OrderStatus.ready,
         OrderStatus.completed,
       ];
     }
@@ -1917,13 +1916,13 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
       case OrderStatus.preparing:
         return isIndo ? 'Sedang Disiapkan' : 'Preparing';
       case OrderStatus.ready:
-        return isIndo ? 'Siap Disajikan' : 'Ready to Serve';
+        return isIndo ? 'Siap Diambil' : 'Ready for Pickup';
       case OrderStatus.readyForPickup:
         return order.isDelivery
             ? (isIndo
                 ? 'Pesanan Siap Diambil Kurir'
                 : 'Ready for Driver Pickup')
-            : (isIndo ? 'Siap Diambil di Counter' : 'Ready at Counter');
+            : (isIndo ? 'Siap Diambil' : 'Ready for Pickup');
       case OrderStatus.pickingUp:
         return isIndo ? 'Kurir Menuju Restoran' : 'Courier Heading to Outlet';
       case OrderStatus.pickedUp:
