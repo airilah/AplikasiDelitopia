@@ -5,9 +5,9 @@ import '../../../core/routes/app_router.dart';
 import '../../../core/utils/auth_guard.dart';
 import '../../../core/localization/app_language.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../controllers/order_controller.dart';
 import '../models/order_model.dart';
+import 'in_app_live_tracking_view.dart';
 import '../../../core/widgets/app_dialog.dart';
 import 'package:delitopia_v2/src/core/utils/helpers.dart';
 
@@ -1602,15 +1602,17 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
         order.trackUrl != null &&
         order.trackUrl!.isNotEmpty) {
       return OutlinedButton(
-        onPressed: () async {
-          final uri = Uri.tryParse(order.trackUrl!);
-          if (uri != null && await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-            return;
-          }
-          if (context.mounted) {
-            _openOrderDetails(order, isActive: true);
-          }
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => InAppLiveTrackingView(
+                trackUrl: order.trackUrl!,
+                orderNumber: order.orderNumber,
+                driverName: order.grabDriver?['name'],
+                driverPhone: order.grabDriver?['phone'],
+              ),
+            ),
+          );
         },
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFFDD2222),

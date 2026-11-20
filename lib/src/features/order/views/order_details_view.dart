@@ -17,6 +17,7 @@ import '../../../core/services/api_client.dart';
 import '../../../shared/services/service_providers.dart';
 import '../controllers/order_controller.dart';
 import '../models/order_model.dart';
+import 'in_app_live_tracking_view.dart';
 import '../../../core/widgets/app_rating_dialog.dart';
 import '../../../core/widgets/app_dialog.dart';
 import 'package:delitopia_v2/src/core/utils/helpers.dart';
@@ -1205,12 +1206,21 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
                     width: double.infinity,
                     height: 40,
                     child: ElevatedButton.icon(
-                      onPressed: () async {
-                        final uri = Uri.tryParse(trackUrl);
-                        if (uri != null && await canLaunchUrl(uri)) {
-                          await launchUrl(uri,
-                              mode: LaunchMode.externalApplication);
-                        }
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => InAppLiveTrackingView(
+                              trackUrl: trackUrl,
+                              orderNumber: order.orderNumber,
+                              driverName: hasDriver ? driverName : null,
+                              driverPhone: driverPhone,
+                              driverPlate: [
+                                if (driverModel != null && driverModel.isNotEmpty) driverModel,
+                                if (driverPlate != null && driverPlate.isNotEmpty) driverPlate,
+                              ].join(' • '),
+                            ),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF00B14F),

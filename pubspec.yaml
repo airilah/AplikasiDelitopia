@@ -88,6 +88,7 @@ dependencies:
   sign_in_with_apple: ^8.2.0
   gal: ^2.3.3
   package_info_plus: ^9.0.1
+  webview_flutter: ^4.14.1
 
 dev_dependencies:
   flutter_test:
