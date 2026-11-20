@@ -944,7 +944,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
           break;
         case 'paid':
         case 'paid_waiting_confirmation':
-          text = isEn ? 'Paid' : 'Pembayaran Berhasil';
+          text = isEn ? 'Paid' : 'Dibayar';
           break;
         case 'confirmed':
         case 'accepted':
@@ -959,24 +959,24 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
         case 'ready':
         case 'ready_for_pickup':
           text = order.isTakeAway
-              ? (isEn ? 'Ready at Counter' : 'Siap Di Counter')
-              : (isEn ? 'Ready to Serve' : 'Siap Disajikan');
+              ? (isEn ? 'Ready' : 'Siap Diambil')
+              : (isEn ? 'Ready' : 'Siap Saji');
           break;
         case 'picking_up':
         case 'picking_up_driver':
-          text = isEn ? 'Driver OTW' : 'Kurir Menuju Resto';
+          text = isEn ? 'Driver OTW' : 'Kurir OTW';
           break;
         case 'picked_up':
           text = isEn ? 'Picked Up' : 'Diambil';
           break;
         case 'in_delivery':
         case 'out_for_delivery':
-          text = isEn ? 'Delivering' : 'Dalam Pengiriman';
+          text = isEn ? 'Delivering' : 'Diantar';
           break;
         case 'completed':
           text = order.isDelivery
-              ? (isEn ? 'Delivered' : 'Pesanan Terkirim')
-              : (isEn ? 'Completed' : 'Pesanan Selesai');
+              ? (isEn ? 'Delivered' : 'Terkirim')
+              : (isEn ? 'Completed' : 'Selesai');
           break;
         case 'cancelled':
           text = isEn ? 'Cancelled' : 'Dibatalkan';

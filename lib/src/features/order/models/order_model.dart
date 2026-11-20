@@ -203,22 +203,22 @@ class OrderStatus {
     final isEn = lang == AppLanguage.english;
 
     switch (s) {
-      case pendingPayment:   return isEn ? 'Awaiting Payment' : 'Menunggu Pembayaran';
-      case paymentFailed:    return isEn ? 'Payment Failed' : 'Pembayaran Gagal';
+      case pendingPayment:   return isEn ? 'Unpaid' : 'Belum Bayar';
+      case paymentFailed:    return isEn ? 'Failed' : 'Gagal';
       case expired:          return isEn ? 'Expired' : 'Kedaluwarsa';
-      case paid:             return isEn ? 'Payment Success' : 'Pembayaran Berhasil';
-      case confirmed:        return isEn ? 'Order Accepted' : 'Pesanan Diterima';
-      case rejected:         return isEn ? 'Order Rejected' : 'Pesanan Ditolak';
-      case preparing:        return isEn ? 'Preparing Order' : 'Sedang Disiapkan';
-      case ready:            return isEn ? 'Ready to Serve' : 'Siap Disajikan';
-      case readyForPickup:   return type == 'delivery' ? (isEn ? 'Ready for Driver' : 'Siap Diambil Kurir') : (isEn ? 'Ready at Counter' : 'Siap Diambil di Counter');
-      case pickingUp:        return isEn ? 'Driver Heading to Restaurant' : 'Kurir Menuju Restoran';
-      case pickedUp:         return isEn ? 'Picked Up by Driver' : 'Pesanan Diambil Kurir';
+      case paid:             return isEn ? 'Paid' : 'Dibayar';
+      case confirmed:        return isEn ? 'Accepted' : 'Diterima';
+      case rejected:         return isEn ? 'Rejected' : 'Ditolak';
+      case preparing:        return isEn ? 'Preparing' : 'Disiapkan';
+      case ready:            return isEn ? 'Ready' : 'Siap Saji';
+      case readyForPickup:   return type == 'delivery' ? (isEn ? 'Ready' : 'Siap Diambil') : (isEn ? 'Ready' : 'Siap Diambil');
+      case pickingUp:        return isEn ? 'Driver OTW' : 'Kurir OTW';
+      case pickedUp:         return isEn ? 'Picked Up' : 'Diambil';
       case inDelivery:
-      case outForDelivery:   return isEn ? 'Out for Delivery' : 'Dalam Pengiriman';
+      case outForDelivery:   return isEn ? 'Delivering' : 'Diantar';
       case completed:
-        if (type == 'delivery') return isEn ? 'Order Delivered' : 'Pesanan Terkirim';
-        return isEn ? 'Completed' : 'Pesanan Selesai';
+        if (type == 'delivery') return isEn ? 'Delivered' : 'Terkirim';
+        return isEn ? 'Completed' : 'Selesai';
       case cancelled:        return isEn ? 'Cancelled' : 'Dibatalkan';
       default:
         return raw.replaceAll('_', ' ').split(' ').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '').join(' ');
