@@ -37,13 +37,16 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Deep linking intent filters for Dine-In Table QR -->
+            <!-- Deep linking intent filters for Dine-In Table QR & Shared Menu -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="delitopia" android:host="dine-in" />
                 <data android:scheme="delitopia" android:pathPrefix="/dine-in" />
+                <data android:scheme="delitopia" android:host="product" />
+                <data android:scheme="delitopia" android:pathPrefix="/product" />
+                <data android:scheme="delitopia" android:pathPrefix="/share/menu" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -52,6 +55,12 @@
                 <data android:scheme="https"
                       android:host="delitopia.mannagroup.id"
                       android:pathPrefix="/dine-in" />
+                <data android:scheme="https"
+                      android:host="delitopia.mannagroup.id"
+                      android:pathPrefix="/share/menu" />
+                <data android:scheme="https"
+                      android:host="delitopia.mannagroup.id"
+                      android:pathPrefix="/product" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -60,6 +69,12 @@
                 <data android:scheme="https"
                       android:host="aplikasi.mannagroup.id"
                       android:pathPrefix="/dine-in" />
+                <data android:scheme="https"
+                      android:host="aplikasi.mannagroup.id"
+                      android:pathPrefix="/share/menu" />
+                <data android:scheme="https"
+                      android:host="aplikasi.mannagroup.id"
+                      android:pathPrefix="/product" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

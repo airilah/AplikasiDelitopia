@@ -554,12 +554,34 @@ class AppRouter {
     // Error Handler
     errorBuilder: (context, state) => ErrorView(error: state.error),
 
-    // Redirect Logic (e.g., authentication)
+    // Redirect Logic (e.g., authentication & deep link normalization)
     redirect: (context, state) {
-      // Normalization for custom schemes like delitopia://dine-in?... where host is dine-in
+      // 1. Normalization for custom schemes like delitopia://dine-in?... where host is dine-in
       if (state.uri.host == 'dine-in' && state.uri.path != '/dine-in') {
         final q = state.uri.query;
         return '/dine-in${q.isNotEmpty ? '?$q' : ''}';
+      }
+
+      // 2. Normalization for custom schemes like delitopia://product/125?branchId=4
+      if (state.uri.host == 'product') {
+        final q = state.uri.query;
+        final cleanPath = state.uri.path.replaceAll(RegExp(r'^/+'), '');
+        if (cleanPath.isNotEmpty && !cleanPath.startsWith('product/')) {
+          return '/product/$cleanPath${q.isNotEmpty ? '?$q' : ''}';
+        }
+        final idParam = state.uri.queryParameters['id'] ?? state.uri.queryParameters['menuId'];
+        if (idParam != null && idParam.isNotEmpty) {
+          return '/product/$idParam${q.isNotEmpty ? '?$q' : ''}';
+        }
+      }
+
+      // 3. Normalization for HTTPS Share Menu links like https://aplikasi.mannagroup.id/share/menu/125?branchId=4
+      if (state.uri.path.startsWith('/share/menu/')) {
+        final menuId = state.uri.path.substring('/share/menu/'.length).split('/').first;
+        if (menuId.isNotEmpty) {
+          final q = state.uri.query;
+          return '/product/$menuId${q.isNotEmpty ? '?$q' : ''}';
+        }
       }
 
       return null; // No redirect

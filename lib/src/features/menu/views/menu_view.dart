@@ -2218,21 +2218,21 @@ class _MenuViewState extends ConsumerState<MenuView> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    width: 70,
-                    height: 70,
+                    width: 90,
+                    height: 90,
                     color: Colors.grey[200],
                     child: Stack(
                       children: [
                         CachedImage(
                           imageUrl: menu.photo,
-                          width: 70,
-                          height: 70,
+                          width: 90,
+                          height: 90,
                           fit: BoxFit.cover,
                           heroTag: 'product_photo_${menu.id}',
                           errorWidget: Image.asset(
                             'assets/images/logo.png',
-                            width: 70,
-                            height: 70,
+                            width: 90,
+                            height: 90,
                             errorBuilder: (_, __, ___) => const Icon(
                               Icons.fastfood,
                               size: 28,

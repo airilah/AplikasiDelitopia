@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/back_button_wrapper.dart';
@@ -126,6 +127,81 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
     );
   }
 
+  Future<void> _shareProduct(Menu product, AppLanguage lang) async {
+    final isId = lang == AppLanguage.indonesia;
+    final targetMenuId = product.menuTemplateId ?? product.id;
+    final targetBranchId = _effectiveBranchId(product);
+    final currentBranch = _activeBranch ?? ref.read(selectedBranchProvider);
+    final outletName = (currentBranch?.outlet ?? product.branchesOutlet ?? '').trim();
+    final locationName = (currentBranch?.location ?? product.branchesLocation ?? '').trim();
+    final branchLabel = (outletName.isNotEmpty && locationName.isNotEmpty)
+        ? '$outletName, $locationName'
+        : (outletName.isNotEmpty ? outletName : locationName);
+
+    final shareUrl = targetBranchId != null
+        ? 'https://aplikasi.mannagroup.id/share/menu/$targetMenuId?branchId=$targetBranchId'
+        : 'https://aplikasi.mannagroup.id/share/menu/$targetMenuId';
+
+    final buffer = StringBuffer();
+    if (product.hasPromo && product.discountPercentage > 0) {
+      buffer.writeln(
+        isId
+            ? '🔥 *PROMO DELITOPIA (-${product.discountPercentage}%)* 🔥'
+            : '🔥 *DELITOPIA PROMO (-${product.discountPercentage}%)* 🔥',
+      );
+    }
+    buffer.writeln('🍽️ *${product.name}*');
+    if (product.hasPromo) {
+      buffer.writeln(
+        isId
+            ? '💰 Harga Promo: *${product.formattedPromoPrice}* ~(${product.formattedOriginalPrice})~'
+            : '💰 Promo Price: *${product.formattedPromoPrice}* ~(${product.formattedOriginalPrice})~',
+      );
+    } else {
+      buffer.writeln(
+        isId
+            ? '💰 Harga: *${product.formattedPrice}*'
+            : '💰 Price: *${product.formattedPrice}*',
+      );
+    }
+
+    final soldLabel = product.formattedSoldFor(lang);
+    if (product.averageRating > 0 && product.reviewCount > 0) {
+      buffer.writeln(
+        isId
+            ? '⭐ Rating: ${product.averageRating.toStringAsFixed(1)} (${product.reviewCount} Ulasan) • $soldLabel'
+            : '⭐ Rating: ${product.averageRating.toStringAsFixed(1)} (${product.reviewCount} Reviews) • $soldLabel',
+      );
+    } else if (soldLabel.isNotEmpty) {
+      buffer.writeln('🔥 $soldLabel');
+    }
+
+    if (branchLabel.isNotEmpty) {
+      buffer.writeln('📍 Outlet: $branchLabel');
+    }
+
+    final desc = product.description.trim();
+    if (desc.isNotEmpty) {
+      final shortDesc = desc.length > 130 ? '${desc.substring(0, 127)}...' : desc;
+      buffer.writeln('\n"$shortDesc"');
+    }
+
+    buffer.writeln(
+      isId
+          ? '\nYuk pesan menu ini di aplikasi *Delitopia*! Klik: 👇\n$shareUrl'
+          : '\nOrder this menu now on the *Delitopia* app! Tap: 👇\n$shareUrl',
+    );
+
+    try {
+      await Share.share(
+        buffer.toString(),
+        subject: '${product.name} - Delitopia',
+      );
+    } catch (e) {
+      debugPrint('Failed to share product: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
@@ -219,6 +295,24 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                   ),
                 ),
                 actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Center(
+                      child: _buildHeaderCircleButton(
+                        child: IconButton(
+                          tooltip: lang == AppLanguage.indonesia ? 'Bagikan Menu' : 'Share Menu',
+                          icon: const Icon(
+                            Icons.share_outlined,
+                            color: Colors.black87,
+                            size: 20,
+                          ),
+                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                          padding: EdgeInsets.zero,
+                          onPressed: () => _shareProduct(product, lang),
+                        ),
+                      ),
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.only(right: 12.0),
                     child: Center(
@@ -754,6 +848,18 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
               ),
             ),
             actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: Center(
+                  child: _buildHeaderCircleButton(
+                    child: const Icon(
+                      Icons.share_outlined,
+                      color: Colors.black26,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(right: 12.0),
                 child: Center(
