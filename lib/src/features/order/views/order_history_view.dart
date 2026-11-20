@@ -11,6 +11,9 @@ import '../models/order_model.dart';
 import '../../../core/widgets/app_dialog.dart';
 import 'package:delitopia_v2/src/core/utils/helpers.dart';
 
+/// Menyimpan tab terakhir yang dibuka di halaman "Pesanan Saya" (0 = Aktif, 1 = Riwayat)
+final orderHistoryActiveTabProvider = StateProvider<int>((ref) => 0);
+
 class OrderHistoryView extends ConsumerStatefulWidget {
   const OrderHistoryView({super.key});
 
@@ -28,11 +31,33 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    final savedTabIndex = ref.read(orderHistoryActiveTabProvider).clamp(0, 1);
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: savedTabIndex,
+    );
+    _tabController.addListener(_handleTabChange);
+  }
+
+  void _handleTabChange() {
+    if (!mounted) return;
+    final currentIndex = _tabController.index;
+    if (ref.read(orderHistoryActiveTabProvider) != currentIndex) {
+      ref.read(orderHistoryActiveTabProvider.notifier).state = currentIndex;
+    }
+  }
+
+  void _openOrderDetails(Order order, {required bool isActive}) {
+    ref.read(orderHistoryActiveTabProvider.notifier).state = isActive ? 0 : 1;
+    final targetId =
+        order.orderNumber.isNotEmpty ? order.orderNumber : order.id.toString();
+    context.go('/orders/$targetId');
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     super.dispose();
   }
@@ -491,8 +516,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
         side: const BorderSide(color: Color(0xFFECECEC)),
       ),
       child: InkWell(
-        onTap: () => context.go(
-            '/orders/${order.orderNumber.isNotEmpty ? order.orderNumber : order.id}'),
+        onTap: () => _openOrderDetails(order, isActive: isActive),
         borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
@@ -740,8 +764,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                                   child: SizedBox(
                                     height: 40,
                                     child: OutlinedButton(
-                                      onPressed: () => context.go(
-                                          '/orders/${order.orderNumber.isNotEmpty ? order.orderNumber : order.id}'),
+                                      onPressed: () => _openOrderDetails(order, isActive: isActive),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor:
                                             const Color(0xFF111827),
@@ -780,8 +803,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                             child: SizedBox(
                               height: 40,
                               child: OutlinedButton(
-                                onPressed: () => context.go(
-                                    '/orders/${order.orderNumber.isNotEmpty ? order.orderNumber : order.id}'),
+                                onPressed: () => _openOrderDetails(order, isActive: isActive),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: const Color(0xFF111827),
                                   side: const BorderSide(
@@ -816,8 +838,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                       child: SizedBox(
                         height: 40,
                         child: OutlinedButton(
-                          onPressed: () => context.go(
-                              '/orders/${order.orderNumber.isNotEmpty ? order.orderNumber : order.id}'),
+                          onPressed: () => _openOrderDetails(order, isActive: isActive),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF111827),
                             side: const BorderSide(color: Color(0xFF9CA3AF)),
@@ -874,34 +895,35 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
   String _getMonthName(int month, AppLanguage lang) {
     final isIndo = lang == AppLanguage.indonesia;
     const indoMonths = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
       'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember'
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des'
     ];
     const engMonths = [
-      'January',
-      'February',
-      'March',
-      'April',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
       'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
-    return isIndo ? indoMonths[month - 1] : engMonths[month - 1];
+    final safeIdx = (month - 1).clamp(0, 11);
+    return isIndo ? indoMonths[safeIdx] : engMonths[safeIdx];
   }
 
   Widget _buildStatusChip(Order order, AppLanguage lang) {
@@ -1587,8 +1609,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
             return;
           }
           if (context.mounted) {
-            context.go(
-                '/orders/${order.orderNumber.isNotEmpty ? order.orderNumber : order.id}');
+            _openOrderDetails(order, isActive: true);
           }
         },
         style: OutlinedButton.styleFrom(
@@ -1609,8 +1630,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
     // Delivery order default action -> Lacak Pesanan
     if (order.isDelivery) {
       return OutlinedButton(
-        onPressed: () => context.go(
-            '/orders/${order.orderNumber.isNotEmpty ? order.orderNumber : order.id}'),
+        onPressed: () => _openOrderDetails(order, isActive: true),
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFFDD2222),
           side: const BorderSide(color: Color(0xFFDD2222)),
