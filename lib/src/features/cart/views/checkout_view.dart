@@ -199,17 +199,27 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(5),
+                    width: 28,
+                    height: 28,
+                    padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00B14F).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(7),
+                      border: Border.all(
+                        color: const Color(0xFF00B14F).withValues(alpha: 0.25),
+                      ),
                     ),
-                    child: const Icon(Icons.two_wheeler_rounded, color: Color(0xFF00B14F), size: 16),
+                    child: Image.asset(
+                      'assets/icons/grab.png',
+                      fit: BoxFit.contain,
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Grab Delivery',
-                    style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold, fontSize: 13),
+                  Text(
+                    lang == AppLanguage.indonesia
+                        ? 'Pengiriman GrabExpress'
+                        : 'GrabExpress Delivery',
+                    style: const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   const Spacer(),
                   Container(

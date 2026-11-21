@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/localization/app_language.dart';
 
-class InAppLiveTrackingView extends StatefulWidget {
+class InAppLiveTrackingView extends ConsumerStatefulWidget {
   final String trackUrl;
   final String orderNumber;
   final String? driverName;
@@ -19,10 +21,11 @@ class InAppLiveTrackingView extends StatefulWidget {
   });
 
   @override
-  State<InAppLiveTrackingView> createState() => _InAppLiveTrackingViewState();
+  ConsumerState<InAppLiveTrackingView> createState() =>
+      _InAppLiveTrackingViewState();
 }
 
-class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
+class _InAppLiveTrackingViewState extends ConsumerState<InAppLiveTrackingView> {
   late final WebViewController _controller;
   int _loadingProgress = 0;
   bool _hasError = false;
@@ -110,7 +113,10 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
 
   @override
   Widget build(BuildContext context) {
-    final hasDriver = widget.driverName != null && widget.driverName!.isNotEmpty;
+    final lang = ref.watch(appLanguageProvider);
+    final isIndo = lang == AppLanguage.indonesia;
+    final hasDriver =
+        widget.driverName != null && widget.driverName!.isNotEmpty;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -120,16 +126,16 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          tooltip: 'Kembali',
+          tooltip: isIndo ? 'Kembali' : 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Lacak Kurir Grab',
-              style: TextStyle(
+            Text(
+              isIndo ? 'Lacak Kurir GrabExpress' : 'Track GrabExpress Courier',
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -149,12 +155,12 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Muat Ulang',
+            tooltip: isIndo ? 'Muat Ulang' : 'Reload',
             onPressed: _reloadPage,
           ),
           IconButton(
             icon: const Icon(Icons.open_in_browser_rounded),
-            tooltip: 'Buka di Browser',
+            tooltip: isIndo ? 'Buka di Browser' : 'Open in Browser',
             onPressed: _openInExternalBrowser,
           ),
         ],
@@ -192,9 +198,11 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Gagal Memuat Peta Pelacakan',
-                      style: TextStyle(
+                    Text(
+                      isIndo
+                          ? 'Gagal Memuat Peta Pelacakan'
+                          : 'Failed to Load Tracking Map',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1E293B),
@@ -202,7 +210,10 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _errorMessage ?? 'Pastikan koneksi internet Anda aktif dan stabil.',
+                      _errorMessage ??
+                          (isIndo
+                              ? 'Pastikan koneksi internet Anda aktif dan stabil.'
+                              : 'Please make sure your internet connection is active and stable.'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
@@ -215,8 +226,11 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
                       children: [
                         OutlinedButton.icon(
                           onPressed: _openInExternalBrowser,
-                          icon: const Icon(Icons.open_in_browser_rounded, size: 18),
-                          label: const Text('Buka di Browser'),
+                          icon: const Icon(Icons.open_in_browser_rounded,
+                              size: 18),
+                          label: Text(
+                            isIndo ? 'Buka di Browser' : 'Open in Browser',
+                          ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFFDD2222),
                             side: const BorderSide(color: Color(0xFFDD2222)),
@@ -229,7 +243,7 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
                         ElevatedButton.icon(
                           onPressed: _reloadPage,
                           icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text('Coba Lagi'),
+                          label: Text(isIndo ? 'Coba Lagi' : 'Try Again'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFDD2222),
                             foregroundColor: Colors.white,
@@ -254,7 +268,8 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
               right: 14,
               bottom: 14,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -270,15 +285,19 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF00B14F),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.two_wheeler_rounded,
+                      width: 34,
+                      height: 34,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
                         color: Colors.white,
-                        size: 16,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFF00B14F).withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Image.asset(
+                        'assets/icons/grab.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -297,7 +316,8 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (widget.driverPlate != null && widget.driverPlate!.isNotEmpty)
+                          if (widget.driverPlate != null &&
+                              widget.driverPlate!.isNotEmpty)
                             Text(
                               widget.driverPlate!,
                               style: const TextStyle(
@@ -309,7 +329,8 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
                         ],
                       ),
                     ),
-                    if (widget.driverPhone != null && widget.driverPhone!.isNotEmpty)
+                    if (widget.driverPhone != null &&
+                        widget.driverPhone!.isNotEmpty)
                       IconButton.filled(
                         onPressed: _callDriver,
                         style: IconButton.styleFrom(
@@ -318,7 +339,7 @@ class _InAppLiveTrackingViewState extends State<InAppLiveTrackingView> {
                           shape: const CircleBorder(),
                         ),
                         icon: const Icon(Icons.phone_rounded, size: 16),
-                        tooltip: 'Hubungi Driver',
+                        tooltip: isIndo ? 'Hubungi Driver' : 'Call Driver',
                       ),
                   ],
                 ),

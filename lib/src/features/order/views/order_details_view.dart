@@ -796,7 +796,7 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
       lightBg = const Color(0xFFF0FDF4);
       borderColor = const Color(0xFFDCFCE7);
       cardIcon = isDelivery
-          ? Icons.local_shipping_outlined
+          ? Icons.two_wheeler_outlined
           : (order.isTakeAway
               ? Icons.shopping_bag_outlined
               : Icons.restaurant_rounded);
@@ -1032,22 +1032,26 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF00B14F),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.two_wheeler_rounded,
-                    size: 14,
+                  width: 26,
+                  height: 26,
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
                     color: Colors.white,
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(
+                      color: const Color(0xFF00B14F).withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Image.asset(
+                    'assets/icons/grab.png',
+                    fit: BoxFit.contain,
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'GrabExpress Delivery',
-                    style: TextStyle(
+                    isIndo ? 'Pengiriman GrabExpress' : 'GrabExpress Delivery',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                       color: Color(0xFF1E293B),
@@ -1120,12 +1124,16 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
                           Text(
                             order.isCompleted
                                 ? (hasDriver
-                                    ? 'Kurir Grab: $driverName'
+                                    ? (isIndo
+                                        ? 'Kurir Grab: $driverName'
+                                        : 'Grab Courier: $driverName')
                                     : (isIndo
-                                        ? 'Kurir Grab Express'
+                                        ? 'Kurir GrabExpress'
                                         : 'GrabExpress Courier'))
                                 : (hasDriver
-                                    ? 'Kurir Grab: $driverName'
+                                    ? (isIndo
+                                        ? 'Kurir Grab: $driverName'
+                                        : 'Grab Courier: $driverName')
                                     : (order.status == OrderStatus.pickingUp
                                         ? (isIndo
                                             ? 'Kurir Menuju Restoran'
@@ -2887,16 +2895,12 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
                 const Divider(height: 18, color: Color(0xFFE2E8F0)),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: Color(0xFFF59E0B),
-                      size: 16,
-                    ),
+    
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         isIndo
-                            ? 'Anda sudah memberikan penilaian ($reviewDateStr)'
+                            ? 'Sudah memberikan penilaian ($reviewDateStr)'
                             : 'You have submitted a review ($reviewDateStr)',
                         style: const TextStyle(
                           fontSize: 12,
