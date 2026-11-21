@@ -607,7 +607,7 @@ class _BranchListState extends ConsumerState<_BranchList> {
                                         ),
                                         if (showDistance && !branchWithDistance.distance.isInfinite) ...[
                                           const SizedBox(width: 6),
-                                          const Text('•',
+                                          const Text('|',
                                               style: TextStyle(
                                                   color: Color(0xFF94A3B8),
                                                   fontSize: 11)),

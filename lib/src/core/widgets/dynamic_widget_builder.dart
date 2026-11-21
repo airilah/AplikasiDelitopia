@@ -10,7 +10,6 @@ import '../../shared/models/brand_model.dart';
 import '../../shared/services/service_providers.dart';
 import '../../shared/services/pos_service.dart' as pos;
 import '../../shared/models/user_voucher_model.dart' as pos_models;
-import '../../features/voucher/controllers/voucher_controller.dart' as voucher_ctrl;
 import '../../features/menu/views/brand_branch_selection_view.dart';
 import '../routes/app_router.dart';
 import '../services/storage_service.dart';
@@ -634,19 +633,18 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
   }
 
   Widget _buildVouchersCard(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
+    final isIndo = lang == AppLanguage.indonesia;
     final token = ref.watch(storageServiceProvider).getAuthToken();
     final isGuest = token == null || token.isEmpty;
-    final availableAsync = ref.watch(availableVouchersProvider);
-    final categorizedAsync = ref.watch(voucher_ctrl.categorizedVouchersProvider);
+    final myVouchersAsync = ref.watch(pos.myVouchersProvider);
 
-    final availableCount = availableAsync.valueOrNull?.length;
-    final categorizedCount = categorizedAsync.valueOrNull != null
-        ? ((categorizedAsync.valueOrNull!['auto_granted']?.length ?? 0) +
-            (categorizedAsync.valueOrNull!['point_redemption']?.length ?? 0) +
-            (categorizedAsync.valueOrNull!['cash_purchase']?.length ?? 0))
-        : null;
-
-    final totalVoucherCount = availableCount ?? categorizedCount ?? 0;
+    final activeClaimedCount = isGuest
+        ? 0
+        : (myVouchersAsync.valueOrNull?.vouchers ??
+                const <pos_models.UserVoucher>[])
+            .where((v) => v.isActive)
+            .length;
 
     return AnimatedCard(
       onTap: () {
@@ -692,7 +690,7 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    _text('available'),
+                    isIndo ? 'Aktif' : 'Active',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 8,
@@ -711,7 +709,7 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _text('vouchers'),
+                        isIndo ? 'Voucher Kamu' : 'Your Vouchers',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -722,7 +720,9 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _text('tap_to_redeem'),
+                        activeClaimedCount > 0
+                            ? (isIndo ? 'Siap digunakan' : 'Ready to use')
+                            : _text('tap_to_redeem'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -734,7 +734,7 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                if (availableAsync.isLoading && categorizedAsync.isLoading && totalVoucherCount == 0)
+                if (!isGuest && myVouchersAsync.isLoading && myVouchersAsync.valueOrNull == null)
                   const SizedBox(
                     width: 18,
                     height: 18,
@@ -747,9 +747,9 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      (availableAsync.hasError && categorizedAsync.hasError && !isGuest && totalVoucherCount == 0)
+                      (!isGuest && myVouchersAsync.hasError && myVouchersAsync.valueOrNull == null)
                           ? '-'
-                          : '$totalVoucherCount',
+                          : '$activeClaimedCount',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -897,7 +897,7 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
                                 ),
                                 const SizedBox(width: 6),
                                 const Text(
-                                  '•',
+                                  '|',
                                   style: TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 10,
@@ -1382,7 +1382,7 @@ class _DynamicWidgetBuilderState extends ConsumerState<DynamicWidgetBuilder> {
                       ),
                       const SizedBox(width: 4),
                       const Text(
-                        '•',
+                        '|',
                         style: TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 10,

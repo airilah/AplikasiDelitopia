@@ -174,7 +174,7 @@ class FavoritesView extends ConsumerWidget {
                                       ],
                                       const SizedBox(width: 4),
                                       Text(
-                                        '•',
+                                        '|',
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: Colors.grey[400],

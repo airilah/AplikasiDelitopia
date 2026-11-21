@@ -16,7 +16,6 @@ import '../../../shared/models/voucher_model.dart';
 import '../../../shared/models/user_voucher_model.dart' as pos_models;
 import '../../../shared/models/brand_model.dart';
 import '../../menu/views/brand_branch_selection_view.dart';
-import '../../voucher/controllers/voucher_controller.dart' as voucher_ctrl;
 import '../widgets/popup_banner_dialog.dart';
 import '../../../shared/widgets/price_display_widget.dart';
 
@@ -1226,18 +1225,19 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildVouchersCard() {
     final lang = ref.watch(appLanguageProvider);
-    final availableAsync = ref.watch(availableVouchersProvider);
-    final categories =
-        ref.watch(voucher_ctrl.categorizedVouchersProvider).asData?.value ??
-            const {};
-    final categorizedCount = (categories['auto_granted']?.length ?? 0) +
-        (categories['point_redemption']?.length ?? 0) +
-        (categories['cash_purchase']?.length ?? 0);
-    final totalVoucherCount = availableAsync.valueOrNull?.length ?? categorizedCount;
+    final isIndo = lang == AppLanguage.indonesia;
+    final isGuest = !AuthGuard.isAuthenticated(ref);
+    final myVouchersAsync = ref.watch(pos.myVouchersProvider);
+    final activeClaimedCount = isGuest
+        ? 0
+        : (myVouchersAsync.valueOrNull?.vouchers ??
+                const <pos_models.UserVoucher>[])
+            .where((v) => v.isActive)
+            .length;
 
     return GestureDetector(
       onTap: () {
-        if (!AuthGuard.isAuthenticated(ref)) {
+        if (isGuest) {
           AuthGuard.showLoginRequiredDialog(context,
               redirectTo: AppRouter.navigation);
         } else {
@@ -1272,46 +1272,59 @@ class _HomePageState extends ConsumerState<HomePage> {
                     color: Colors.white, size: 18),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.3),
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '$totalVoucherCount',
+                    isIndo ? 'Aktif' : 'Active',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ],
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  tr.get('vouchers', lang),
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 10,
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isIndo ? 'Voucher Kamu' : 'Your Vouchers',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        activeClaimedCount > 0
+                            ? (isIndo ? 'Siap digunakan' : 'Ready to use')
+                            : tr.get('tap_to_redeem', lang),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 9,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Text(
-                  tr.get('available', lang),
+                  '$activeClaimedCount',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     height: 1.0,
-                  ),
-                ),
-                Text(
-                  tr.get('tap_to_redeem', lang),
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 9,
                   ),
                 ),
               ],
@@ -1908,9 +1921,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Text('•',
+                          const Text('|',
                               style: TextStyle(
-                                  color: Color(0xFF94A3B8), fontSize: 9)),
+                                  color: Color(0xFF94A3B8), fontSize: 10)),
                           const SizedBox(width: 4),
                           const Icon(
                             Icons.near_me,
@@ -2221,9 +2234,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Text('•',
+                          const Text('|',
                               style: TextStyle(
-                                  color: Color(0xFF94A3B8), fontSize: 9)),
+                                  color: Color(0xFF94A3B8), fontSize: 10)),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(

@@ -1384,7 +1384,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Text('•',
+                        const Text('|',
                             style: TextStyle(
                                 color: Color(0xFF94A3B8),
                                 fontSize: 10)),
@@ -1760,7 +1760,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                                           ),
                                           if (showDistance) ...[
                                             const SizedBox(width: 6),
-                                            const Text('•',
+                                            const Text('|',
                                                 style: TextStyle(
                                                     color: Color(0xFF94A3B8),
                                                     fontSize: 11)),
@@ -2050,7 +2050,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 5),
                         child: Text(
-                          '•',
+                          '|',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey[400],
@@ -2325,7 +2325,7 @@ class _MenuViewState extends ConsumerState<MenuView> {
                             ],
                             const SizedBox(width: 4),
                             Text(
-                              '•',
+                              '|',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: Colors.grey[400],

@@ -606,7 +606,7 @@ class _GlobalSearchViewState extends ConsumerState<GlobalSearchView> {
                 ),
                 if (menu.soldCount > 0) ...[
                   Text(
-                    ' • ${menu.formattedSold(lang)}',
+                    ' | ${menu.formattedSold(lang)}',
                     style: const TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,

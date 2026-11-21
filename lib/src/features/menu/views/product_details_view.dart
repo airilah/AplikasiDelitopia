@@ -551,7 +551,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                                 ),
                                 const SizedBox(width: 8),
                                 const Text(
-                                  '•',
+                                  '|',
                                   style: TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 12,
@@ -590,7 +590,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                                 ),
                                 const SizedBox(width: 8),
                                 const Text(
-                                  '•',
+                                  '|',
                                   style: TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 12,
@@ -1430,7 +1430,7 @@ class _ProductDetailsViewState extends ConsumerState<ProductDetailsView> {
                                               ),
                                               if (showDistance) ...[
                                                 const SizedBox(width: 6),
-                                                const Text('•',
+                                                const Text('|',
                                                     style: TextStyle(
                                                         color: Color(0xFF94A3B8),
                                                         fontSize: 11)),
