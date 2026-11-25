@@ -2683,13 +2683,30 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
               ),
             ],
             _paymentRow('Subtotal', order.subtotal),
-            _paymentRow(isIndo ? 'Pajak' : 'Tax', order.tax),
-            _paymentRow(isIndo ? 'Layanan' : 'Service Fee', order.service),
-            if (order.deliveryFee > 0)
-              _paymentRow(tr.get('delivery_fee', lang), order.deliveryFee),
             if (order.discount > 0)
               _paymentRow(isIndo ? 'Diskon' : 'Discount', -order.discount,
                   isDiscount: true),
+            _paymentRow(isIndo ? 'Layanan' : 'Service Fee', order.service),
+            _paymentRow(isIndo ? 'Pajak' : 'Tax', order.tax),
+            if (order.deliveryFee > 0)
+              _paymentRow(tr.get('delivery_fee', lang), order.deliveryFee),
+            if ((order.totalAmount -
+                    (order.subtotal -
+                        order.discount +
+                        order.service +
+                        order.tax +
+                        order.deliveryFee)) >=
+                1)
+              _paymentRow(
+                isIndo ? 'Pembulatan' : 'Rounding',
+                (order.totalAmount -
+                        (order.subtotal -
+                            order.discount +
+                            order.service +
+                            order.tax +
+                            order.deliveryFee))
+                    .roundToDouble(),
+              ),
             const Divider(height: 14),
             _paymentRow('Total', order.totalAmount, isTotal: true),
             const SizedBox(height: 8),

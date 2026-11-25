@@ -49,8 +49,8 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
   bool _selectedVoucherIsFreeDelivery = false;
   bool _userManuallyDeselectedVoucher = false;
 
-  /// Computes net food subtotal, service (5%), PB1 tax (10% after service), and final total
-  /// matching Backend OrderController & POS MPS identically.
+  /// Computes net food subtotal, service (5%), PB1 tax (10% after service),
+  /// upward Rp 100 rounding, and final total matching Backend OrderController & POS MPS identically.
   ({
     double menuVoucherDiscount,
     double deliveryVoucherDiscount,
@@ -58,6 +58,7 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
     double service,
     double tax,
     double netDeliveryFee,
+    double rounding,
     double finalTotal,
   }) _computeOrderPricing(double subtotal, double deliveryFee) {
     final rawDiscount = (_selectedVoucherDiscount ?? 0.0).roundToDouble();
@@ -71,7 +72,9 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
     final service = (taxableSubtotal * 0.05).roundToDouble();
     final tax = ((taxableSubtotal + service) * 0.10).roundToDouble();
     final netDeliveryFee = (deliveryFee - deliveryVoucherDiscount).clamp(0.0, double.infinity);
-    final finalTotal = (taxableSubtotal + service + tax + netDeliveryFee).clamp(0.0, double.infinity);
+    final rawTotal = (taxableSubtotal + service + tax + netDeliveryFee).clamp(0.0, double.infinity);
+    final finalTotal = rawTotal > 0 ? (rawTotal / 100.0).ceil() * 100.0 : 0.0;
+    final rounding = (finalTotal - rawTotal).clamp(0.0, double.infinity);
     return (
       menuVoucherDiscount: menuVoucherDiscount,
       deliveryVoucherDiscount: deliveryVoucherDiscount,
@@ -79,6 +82,7 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
       service: service,
       tax: tax,
       netDeliveryFee: netDeliveryFee,
+      rounding: rounding,
       finalTotal: finalTotal,
     );
   }
@@ -1339,6 +1343,10 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                           ],
                         ),
                       ),
+                    if (pricing.rounding > 0)
+                      _buildSummaryRow(
+                          lang == AppLanguage.indonesia ? 'Pembulatan' : 'Rounding',
+                          pricing.rounding),
                     Divider(height: 14, color: Colors.grey.shade200),
                     _buildSummaryRow(tr.get('total', lang), pricing.finalTotal, isTotal: true),
                   ]))),
@@ -2145,8 +2153,8 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
           Helpers.showSnackbar(
             context,
             lang == AppLanguage.indonesia
-                ? 'Silakan masukkan nomor meja yang valid (hanya angka)'
-                : 'Please enter a valid table number (digits only)',
+                ? 'Masukkan nomor meja Anda'
+                : 'Please enter your table number',
             backgroundColor: Colors.orange,
           );
           return;
