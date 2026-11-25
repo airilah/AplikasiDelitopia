@@ -84,12 +84,13 @@ class Cart {
 
   double get subtotal => items.fold(0, (sum, item) => sum + item.subtotal);
 
-  double get tax => subtotal * 0.10; // 10% tax
-
   double get service =>
-      (subtotal + tax) * 0.05; // 5% service calculated after tax
+      (subtotal * 0.05).roundToDouble(); // 5% service (matches POS order)
 
-  double get total => subtotal + tax + service;
+  double get tax =>
+      ((subtotal + service) * 0.10).roundToDouble(); // 10% PB1 tax after service
+
+  double get total => subtotal + service + tax;
 
   bool get isEmpty => items.isEmpty;
 

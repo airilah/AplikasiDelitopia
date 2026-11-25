@@ -46,7 +46,42 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
   int? _selectedAddressId;
   int? _selectedVoucherId;
   double? _selectedVoucherDiscount;
+  bool _selectedVoucherIsFreeDelivery = false;
   bool _userManuallyDeselectedVoucher = false;
+
+  /// Computes net food subtotal, service (5%), PB1 tax (10% after service), and final total
+  /// matching Backend OrderController & POS MPS identically.
+  ({
+    double menuVoucherDiscount,
+    double deliveryVoucherDiscount,
+    double taxableSubtotal,
+    double service,
+    double tax,
+    double netDeliveryFee,
+    double finalTotal,
+  }) _computeOrderPricing(double subtotal, double deliveryFee) {
+    final rawDiscount = (_selectedVoucherDiscount ?? 0.0).roundToDouble();
+    final menuVoucherDiscount = _selectedVoucherIsFreeDelivery
+        ? 0.0
+        : rawDiscount.clamp(0.0, subtotal);
+    final deliveryVoucherDiscount = _selectedVoucherIsFreeDelivery
+        ? rawDiscount.clamp(0.0, deliveryFee)
+        : 0.0;
+    final taxableSubtotal = (subtotal - menuVoucherDiscount).clamp(0.0, double.infinity);
+    final service = (taxableSubtotal * 0.05).roundToDouble();
+    final tax = ((taxableSubtotal + service) * 0.10).roundToDouble();
+    final netDeliveryFee = (deliveryFee - deliveryVoucherDiscount).clamp(0.0, double.infinity);
+    final finalTotal = (taxableSubtotal + service + tax + netDeliveryFee).clamp(0.0, double.infinity);
+    return (
+      menuVoucherDiscount: menuVoucherDiscount,
+      deliveryVoucherDiscount: deliveryVoucherDiscount,
+      taxableSubtotal: taxableSubtotal,
+      service: service,
+      tax: tax,
+      netDeliveryFee: netDeliveryFee,
+      finalTotal: finalTotal,
+    );
+  }
   bool _isPlacingOrder = false;
   bool _isOrderItemsExpanded = false;
 
@@ -832,6 +867,8 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
           setState(() {
             _selectedVoucherId = bestVoucher!.id;
             _selectedVoucherDiscount = bestDiscount;
+            _selectedVoucherIsFreeDelivery =
+                (bestVoucher.voucher?.voucherType.toLowerCase() ?? '') == 'free_delivery';
           });
         }
       });
@@ -862,10 +899,13 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
             _userManuallyDeselectedVoucher = true;
             _selectedVoucherId = null;
             _selectedVoucherDiscount = null;
+            _selectedVoucherIsFreeDelivery = false;
           } else {
             _userManuallyDeselectedVoucher = false;
             _selectedVoucherId = selectedDv.id;
             _selectedVoucherDiscount = discount;
+            _selectedVoucherIsFreeDelivery =
+                (selectedDv.voucher?.voucherType.toLowerCase() ?? '') == 'free_delivery';
           }
         });
       },
@@ -915,7 +955,8 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
               return _buildPhoneRequiredState(lang);
             }
             final deliveryFee = _orderType == 'delivery' ? (_selectedDeliveryQuote?.amount ?? 0.0) : 0.0;
-            final currentCartTotal = cart.total - (_selectedVoucherDiscount ?? 0) + deliveryFee;
+            final pricing = _computeOrderPricing(cart.subtotal, deliveryFee);
+            final currentCartTotal = pricing.finalTotal;
             final isQrisBelowMin = currentCartTotal < 15000;
 
             if (isQrisBelowMin && _orderType == 'dine_in' && _paymentMethod == 'qris') {
@@ -1272,8 +1313,10 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                     _buildSectionHeader(tr.get('order_summary', lang)),
                     const SizedBox(height: 10),
                     _buildSummaryRow(tr.get('subtotal', lang), cart.subtotal),
-                    _buildSummaryRow(tr.get('tax', lang), cart.tax),
-                    _buildSummaryRow(tr.get('service', lang), cart.service),
+                    if (_selectedVoucherId != null && _selectedVoucherDiscount != null && _selectedVoucherDiscount! > 0)
+                      _buildSummaryRow(tr.get('voucher_discount', lang), -_selectedVoucherDiscount!.roundToDouble(), isDiscount: true),
+                    _buildSummaryRow(tr.get('service', lang), pricing.service),
+                    _buildSummaryRow(tr.get('tax', lang), pricing.tax),
                     if (_orderType == 'delivery' && (_tempDeliveryAddress != null || _selectedAddressId != null))
                       Padding(
                         padding: const EdgeInsets.only(bottom: 5),
@@ -1296,13 +1339,8 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                           ],
                         ),
                       ),
-                    if (_selectedVoucherId != null && _selectedVoucherDiscount != null)
-                      _buildSummaryRow(tr.get('voucher_discount', lang), -_selectedVoucherDiscount!, isDiscount: true),
                     Divider(height: 14, color: Colors.grey.shade200),
-                    _buildSummaryRow(tr.get('total', lang),
-                      cart.total - (_selectedVoucherDiscount ?? 0) +
-                          (_orderType == 'delivery' && _selectedDeliveryQuote != null ? _selectedDeliveryQuote!.amount : 0),
-                      isTotal: true),
+                    _buildSummaryRow(tr.get('total', lang), pricing.finalTotal, isTotal: true),
                   ]))),
               const SizedBox(height: 24),
             ]);
@@ -2189,11 +2227,12 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
 
       final subtotal = cart.subtotal;
       final deliveryFee = _orderType == 'delivery' ? (_selectedDeliveryQuote?.amount ?? 0.0) : 0.0;
-      final tax = subtotal * 0.1;
-      final service = (subtotal + tax) * 0.05;
-      final discount = _selectedVoucherDiscount ?? 0.0;
+      final pricing = _computeOrderPricing(subtotal, deliveryFee);
+      final service = pricing.service;
+      final tax = pricing.tax;
+      final discount = (_selectedVoucherDiscount ?? 0.0).roundToDouble();
       final grandTotal = subtotal + deliveryFee;
-      final finalTotal = (grandTotal + tax + service - discount).clamp(0.0, double.infinity);
+      final finalTotal = pricing.finalTotal;
 
       if (_paymentMethod == 'qris' && finalTotal < 15000) {
         setState(() => _isPlacingOrder = false);
