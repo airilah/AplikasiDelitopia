@@ -4371,10 +4371,10 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
                           height: 18, color: Color(0xFFCBD5E1), thickness: 1),
                       _receiptTotalRow('Subtotal',
                           'Rp ${Helpers.formatNumber(order.subtotal)}'),
-                      _receiptTotalRow(isIndo ? 'Pajak' : 'Tax',
-                          'Rp ${Helpers.formatNumber(order.tax)}'),
                       _receiptTotalRow(isIndo ? 'Biaya Layanan' : 'Service Fee',
                           'Rp ${Helpers.formatNumber(order.service)}'),
+                      _receiptTotalRow(isIndo ? 'Pajak' : 'Tax',
+                          'Rp ${Helpers.formatNumber(order.tax)}'),
                       if (order.deliveryFee > 0)
                         _receiptTotalRow(
                             isIndo ? 'Ongkos Kirim' : 'Delivery Fee',
@@ -4383,6 +4383,18 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
                         _receiptTotalRow(isIndo ? 'Diskon Promo' : 'Discount',
                             '-Rp ${Helpers.formatNumber(order.discount)}',
                             isDiscount: true),
+                      if ((order.totalAmount -
+                                  (order.subtotal -
+                                      order.discount +
+                                      order.service +
+                                      order.tax +
+                                      order.deliveryFee))
+                              .round() >=
+                          1)
+                        _receiptTotalRow(
+                          isIndo ? 'Pembulatan' : 'Rounding',
+                          'Rp ${Helpers.formatNumber((order.totalAmount - (order.subtotal - order.discount + order.service + order.tax + order.deliveryFee)).round())}',
+                        ),
                       const Divider(
                           height: 18, color: Color(0xFFCBD5E1), thickness: 1),
                       Row(
@@ -4522,17 +4534,11 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
               const SizedBox(width: 10),
               Expanded(
                 flex: 3,
-                child: ElevatedButton.icon(
+                child: ElevatedButton(
                   onPressed: () => _saveReceiptToGallery(
                     receiptKey: receiptKey,
                     orderCode: orderCode,
                     isIndo: isIndo,
-                  ),
-                  icon: const Icon(Icons.download_rounded, size: 16),
-                  label: Text(
-                    isIndo ? 'Unduh E-Struk' : 'Download E-Receipt',
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFDD2222),
@@ -4542,6 +4548,11 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
                         horizontal: 12, vertical: 11),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text(
+                    isIndo ? 'Simpan Galeri' : 'Save to Gallery',
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
