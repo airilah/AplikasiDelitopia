@@ -733,7 +733,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
               isEn ? 'Your Rating' : 'Penilaian Anda',
               style: const TextStyle(
                 fontSize: 12,
-                color: Color(0xFF6B7280),
+                color: Color(0xFF111827),
               ),
             ),
             Row(
@@ -776,7 +776,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
             isEn ? 'Rating' : 'Penilaian',
             style: const TextStyle(
               fontSize: 12,
-              color: Color(0xFF6B7280),
+              color: Color(0xFF111827),
             ),
           ),
           Row(
@@ -785,7 +785,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
               const Icon(
                 Icons.star_outline_rounded,
                 size: 14,
-                color: Color(0xFF9CA3AF),
+                color: Color(0xFF111827),
               ),
               const SizedBox(width: 3),
               Text(
@@ -793,7 +793,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF9CA3AF),
+                  color: Color(0xFF111827),
                 ),
               ),
             ],
@@ -897,7 +897,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                             text: '  |  ',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFFD1D5DB),
+                              color: Color(0xFF111827),
                             ),
                           ),
                           TextSpan(
@@ -905,7 +905,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                             style: const TextStyle(
                               fontWeight: FontWeight.w500,
                               fontSize: 12.5,
-                              color: Color(0xFF4B5563),
+                              color: Color(0xFF111827),
                             ),
                           ),
                         ],
@@ -951,7 +951,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w400,
                                     fontSize: 12.5,
-                                    color: Color(0xFF6B7280),
+                                    color: Color(0xFF111827),
                                     height: 1.3,
                                   ),
                                 ),
@@ -967,7 +967,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF6B7280),
+                            color: Color(0xFF111827),
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -977,7 +977,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 11.5,
-                            color: Color(0xFF9CA3AF),
+                            color: Color(0xFF111827),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1002,7 +1002,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                     isEn ? 'Total Payment' : 'Total Pembayaran',
                     style: const TextStyle(
                       fontSize: 12.5,
-                      color: Color(0xFF6B7280),
+                      color: Color(0xFF111827),
                     ),
                   ),
                   Text(
@@ -1035,7 +1035,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                             onPressed: () =>
                                 _showCancelDialog(order.id.toString(), lang),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF374151),
+                              foregroundColor: const Color(0xFF111827),
                               side: const BorderSide(color: Color(0xFFD1D5DB)),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10)),
@@ -1048,7 +1048,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                   fontSize: 12.5,
-                                  color: Color(0xFF374151),
+                                  color: Color(0xFF111827),
                                   fontWeight: FontWeight.w500),
                             ),
                           ),
@@ -1078,7 +1078,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                                           isActive: isActive),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor:
-                                            const Color(0xFF374151),
+                                            const Color(0xFF111827),
                                         side: const BorderSide(
                                             color: Color(0xFFD1D5DB)),
                                         shape: RoundedRectangleBorder(
@@ -1093,7 +1093,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
                                             fontSize: 12.5,
-                                            color: Color(0xFF374151),
+                                            color: Color(0xFF111827),
                                             fontWeight: FontWeight.w500),
                                       ),
                                     ),
@@ -1117,7 +1117,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                                 onPressed: () =>
                                     _openOrderDetails(order, isActive: isActive),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF374151),
+                                  foregroundColor: const Color(0xFF111827),
                                   side: const BorderSide(
                                       color: Color(0xFFD1D5DB)),
                                   shape: RoundedRectangleBorder(
@@ -1131,7 +1131,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                       fontSize: 12.5,
-                                      color: Color(0xFF374151),
+                                      color: Color(0xFF111827),
                                       fontWeight: FontWeight.w500),
                                 ),
                               ),
@@ -1152,7 +1152,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                           onPressed: () =>
                               _openOrderDetails(order, isActive: isActive),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF374151),
+                            foregroundColor: const Color(0xFF111827),
                             side: const BorderSide(color: Color(0xFFD1D5DB)),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
@@ -1164,7 +1164,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 fontSize: 12.5,
-                                color: Color(0xFF374151),
+                                color: Color(0xFF111827),
                                 fontWeight: FontWeight.w500),
                           ),
                         ),
