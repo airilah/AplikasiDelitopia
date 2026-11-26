@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/widgets/back_button_wrapper.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/utils/auth_guard.dart';
@@ -500,207 +501,514 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
         error: (error, stack) => _buildErrorState(error.toString(), lang));
   }
 
+  String _resolveImageUrl(String? path) {
+    if (path == null || path.trim().isEmpty) return '';
+    final t = path.trim();
+    if (t.startsWith('http://') || t.startsWith('https://')) return t;
+    if (t.startsWith('/')) return 'https://aplikasi.mannagroup.id$t';
+    return 'https://aplikasi.mannagroup.id/storage/$t';
+  }
+
+  Widget _buildMenuThumbnail(Order order) {
+    final firstItem = order.items.isNotEmpty ? order.items.first : null;
+    final rawMenuImg = firstItem?.menuImage ?? firstItem?.productImage;
+    final menuImgUrl = _resolveImageUrl(rawMenuImg);
+    final brandLogoUrl = _resolveImageUrl(order.brandLogo);
+    final extraCount = order.items.length > 1 ? order.items.length - 1 : 0;
+
+    Widget fallbackBox() {
+      if (brandLogoUrl.isNotEmpty && menuImgUrl.isEmpty) {
+        return Container(
+          color: const Color(0xFFFFF5F5),
+          padding: const EdgeInsets.all(10),
+          child: CachedNetworkImage(
+            imageUrl: brandLogoUrl,
+            fit: BoxFit.contain,
+            memCacheWidth: 120,
+            errorWidget: (_, __, ___) => const Icon(
+              Icons.restaurant_rounded,
+              color: Color(0xFFDD2222),
+              size: 28,
+            ),
+          ),
+        );
+      }
+      return Container(
+        color: const Color(0xFFFFF5F5),
+        alignment: Alignment.center,
+        child: const Icon(
+          Icons.restaurant_rounded,
+          color: Color(0xFFDD2222),
+          size: 28,
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: 68,
+      height: 68,
+      child: Stack(
+        children: [
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+              color: const Color(0xFFF8FAFC),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(11),
+              child: menuImgUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: menuImgUrl,
+                      width: 68,
+                      height: 68,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 160,
+                      memCacheHeight: 160,
+                      placeholder: (_, __) => Container(
+                        color: const Color(0xFFF3F4F6),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.restaurant_rounded,
+                          color: Color(0xFFD1D5DB),
+                          size: 24,
+                        ),
+                      ),
+                      errorWidget: (_, __, ___) => fallbackBox(),
+                    )
+                  : fallbackBox(),
+            ),
+          ),
+          if (extraCount > 0)
+            Positioned(
+              right: 4,
+              bottom: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.72),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '+$extraCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget? _buildActiveInfoStrip(Order order, AppLanguage lang) {
+    if (order.isExpired) return null;
+    final isEn = lang == AppLanguage.english;
+    final s = order.status.toLowerCase().trim();
+
+    if (s == 'ready' || s == 'ready_for_pickup') {
+      final msg = order.isTakeAway
+          ? (isEn
+              ? 'Your order is ready for pickup at the outlet'
+              : 'Pesanan sudah siap diambil di kasir outlet')
+          : (isEn
+              ? 'Your order is ready to be served'
+              : 'Pesanan Anda sudah siap disajikan');
+      return _buildStripContainer(
+        icon: Icons.check_circle_outline_rounded,
+        text: msg,
+        bgColor: const Color(0xFFECFDF5),
+        borderColor: const Color(0xFFA7F3D0),
+        textColor: const Color(0xFF047857),
+      );
+    }
+
+    if (order.isDelivery &&
+        (s == 'picking_up' ||
+            s == 'picking_up_driver' ||
+            s == 'picked_up' ||
+            s == 'in_delivery' ||
+            s == 'out_for_delivery')) {
+      final msg = (s == 'picking_up' || s == 'picking_up_driver')
+          ? (isEn
+              ? 'GrabExpress driver is heading to the outlet'
+              : 'Kurir GrabExpress sedang menuju outlet')
+          : (isEn
+              ? 'GrabExpress driver is heading to your location'
+              : 'Kurir GrabExpress sedang menuju lokasi Anda');
+      return _buildStripContainer(
+        icon: Icons.delivery_dining_rounded,
+        text: msg,
+        bgColor: const Color(0xFFEEF2FF),
+        borderColor: const Color(0xFFC7D2FE),
+        textColor: const Color(0xFF4338CA),
+      );
+    }
+
+    if (order.isAccepted ||
+        order.isConfirmed ||
+        order.isPreparing ||
+        s == 'accepted' ||
+        s == 'confirmed' ||
+        s == 'preparing' ||
+        s == 'cooking') {
+      final rangeText = order.displayRangeTextLang(lang);
+      final target = order.displayTargetTime;
+      final msg = target.isNotEmpty
+          ? (isEn
+              ? 'Est. $rangeText | Ready ±$target'
+              : 'Estimasi $rangeText | Siap ±$target WIB')
+          : (isEn ? 'Est. $rangeText' : 'Estimasi $rangeText');
+      return _buildStripContainer(
+        icon: Icons.schedule_rounded,
+        text: msg,
+        bgColor: const Color(0xFFFFF7ED),
+        borderColor: const Color(0xFFFED7AA),
+        textColor: const Color(0xFFC2410C),
+      );
+    }
+
+    return null;
+  }
+
+  Widget _buildStripContainer({
+    required IconData icon,
+    required String text,
+    required Color bgColor,
+    required Color borderColor,
+    required Color textColor,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 15, color: textColor),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingRow(Order order, AppLanguage lang) {
+    final isEn = lang == AppLanguage.english;
+    final hasRating = order.rating != null && order.rating! > 0;
+
+    if (hasRating) {
+      final ratingVal = order.rating!.clamp(0.0, 5.0);
+      final fullStars = ratingVal.round().clamp(1, 5);
+      final scoreText = ratingVal % 1 == 0
+          ? '${ratingVal.toInt()}/5'
+          : '${ratingVal.toStringAsFixed(1)}/5';
+
+      return Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              isEn ? 'Your Rating' : 'Penilaian Anda',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ...List.generate(
+                  5,
+                  (i) => Icon(
+                    i < fullStars
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    size: 15,
+                    color: i < fullStars
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFFD1D5DB),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  scoreText,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFD97706),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            isEn ? 'Rating' : 'Penilaian',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.star_outline_rounded,
+                size: 14,
+                color: Color(0xFF9CA3AF),
+              ),
+              const SizedBox(width: 3),
+              Text(
+                isEn ? 'Not rated yet' : 'Belum dinilai',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF9CA3AF),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildOrderCard(
     Order order, {
     required bool isActive,
     required AppLanguage lang,
   }) {
+    final isEn = lang == AppLanguage.english;
+    final brandLabel =
+        order.branchName.isNotEmpty ? order.branchName : 'Delitopia';
+    final brandLogoUrl = _resolveImageUrl(order.brandLogo);
+    final firstItem = order.items.isNotEmpty ? order.items.first : null;
+    final extraMenus = order.items.length > 1 ? order.items.length - 1 : 0;
+    final primaryMenuName =
+        (firstItem != null && firstItem.menuName.trim().isNotEmpty)
+            ? firstItem.menuName.trim()
+            : (order.orderNumber.isNotEmpty
+                ? order.orderNumber
+                : tr
+                    .get('order_fallback', lang)
+                    .replaceFirst('{id}', order.id.toString()));
+    final orderNoLabel = order.orderNumber.isNotEmpty
+        ? '#${order.orderNumber}'
+        : '#${order.id}';
+    final itemCountLabel = isEn
+        ? '${order.itemCount} ${order.itemCount > 1 ? 'items' : 'item'}'
+        : '${order.itemCount} item';
+    final extraMenusLabel = isEn
+        ? ', +$extraMenus other ${extraMenus > 1 ? 'items' : 'item'}'
+        : ', +$extraMenus menu lainnya';
+    final activeStrip = isActive ? _buildActiveInfoStrip(order, lang) : null;
+
     return Card(
-      elevation: 2,
+      elevation: 1.5,
       margin: const EdgeInsets.only(bottom: 14),
       color: Colors.white,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
+      shadowColor: Colors.black.withValues(alpha: 0.06),
       surfaceTintColor: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: Color(0xFFECECEC)),
       ),
       child: InkWell(
         onTap: () => _openOrderDetails(order, isActive: isActive),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Row 1: icon + order number + status chip ──────────
+              // ── Row 1: Brand | Order Type + Colored Status Badge ──
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Container(
-                  //   width: 35,
-                  //   height: 35,
-                  //   decoration: const BoxDecoration(
-                  //     color: Color(0xFFFFEBEB),
-                  //     shape: BoxShape.circle,
-                  //   ),
-                  //   child: Icon(
-                  //     order.isDelivery
-                  //         ? Icons.delivery_dining_rounded
-                  //         : (order.isTakeAway
-                  //             ? Icons.shopping_bag_outlined
-                  //             : Icons.dinner_dining_rounded),
-                  //     color: const Color(0xFFDD2222),
-                  //     size: 18,
-                  //   ),
-                  // ),
-                  // const SizedBox(width: 8),
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFF1F1),
+                      shape: BoxShape.circle,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: brandLogoUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: brandLogoUrl,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 64,
+                            errorWidget: (_, __, ___) => const Icon(
+                              Icons.storefront_rounded,
+                              size: 13,
+                              color: Color(0xFFDD2222),
+                            ),
+                          )
+                        : const Icon(
+                            Icons.storefront_rounded,
+                            size: 13,
+                            color: Color(0xFFDD2222),
+                          ),
+                  ),
+                  const SizedBox(width: 7),
                   Expanded(
-                    child: Text(
-                      order.orderNumber.isNotEmpty
-                          ? order.orderNumber
-                          : tr
-                              .get('order_fallback', lang)
-                              .replaceFirst('{id}', order.id.toString()),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                        color: Colors.black,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: brandLabel,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                          const TextSpan(
+                            text: '  |  ',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFD1D5DB),
+                            ),
+                          ),
+                          TextSpan(
+                            text: _formatOrderTypeBadge(order, lang),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12.5,
+                              color: Color(0xFF4B5563),
+                            ),
+                          ),
+                        ],
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  // const SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   _buildStatusChip(order, lang),
                 ],
               ),
 
               const SizedBox(height: 10),
+              const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              const SizedBox(height: 12),
 
-              // ── Row 2: date | time | order type ──────────────────────────
-              Wrap(
-                spacing: 12,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
+              // ── Row 2: 68x68 Menu Photo + Inline Menu Name, Date & Order ID ──
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.calendar_today_outlined,
-                          size: 14, color: Color(0xFF111827)),
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatOrderDateTime(order, lang),
-                        style: const TextStyle(
-                            fontSize: 12.5,
-                            color: Color(0xFF111827),
-                            fontWeight: FontWeight.normal),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        order.isDelivery
-                            ? Icons.delivery_dining_rounded
-                            : (order.isTakeAway
-                                ? Icons.shopping_bag_outlined
-                                : Icons.dinner_dining_rounded),
-                        size: 14,
-                        color: const Color(0xFF111827),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatOrderTypeBadge(order, lang),
-                        style: const TextStyle(
-                            fontSize: 12.5,
-                            color: Color(0xFF111827),
-                            fontWeight: FontWeight.normal),
-                      ),
-                    ],
-                  ),
-                  if (isActive &&
-                      !order.isExpired &&
-                      (order.isAccepted ||
-                          order.isConfirmed ||
-                          order.isPreparing ||
-                          order.isReady ||
-                          order.isReadyForPickup ||
-                          order.isDelivering ||
-                          order.status == 'accepted' ||
-                          order.status == 'confirmed' ||
-                          order.status == 'preparing' ||
-                          order.status == 'cooking' ||
-                          order.status == 'ready' ||
-                          order.status == 'ready_for_pickup' ||
-                          order.status == 'out_for_delivery'))
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+                  _buildMenuThumbnail(order),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.schedule_rounded,
-                          size: 14,
-                          color: Color(0xFFEA580C),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: primaryMenuName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  color: Color(0xFF111827),
+                                  height: 1.3,
+                                ),
+                              ),
+                              if (extraMenus > 0)
+                                TextSpan(
+                                  text: extraMenusLabel,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 12.5,
+                                    color: Color(0xFF6B7280),
+                                    height: 1.3,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(height: 5),
                         Text(
-                          order.displayTargetTime.isNotEmpty
-                              ? (lang == AppLanguage.english
-                                  ? '${order.displayRangeTextLang(lang)}, Ready ±${order.displayTargetTime}'
-                                  : '${order.displayRangeTextLang(lang)}, Siap ±${order.displayTargetTime} WIB')
-                              : order.displayRangeTextLang(lang),
+                          '$itemCountLabel  |  ${_formatOrderDateTime(order, lang)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 12.5,
-                            color: Color(0xFFEA580C),
-                            fontWeight: FontWeight.normal,
+                            fontSize: 12,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          orderNoLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF9CA3AF),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
+                  ),
                 ],
               ),
 
-              const SizedBox(height: 10),
-              const Divider(height: 1, color: Color(0xFFEDEDED)),
+              // ── Optional Active Info / Estimation Strip ──
+              if (activeStrip != null) activeStrip,
+
+              const SizedBox(height: 12),
+              const Divider(height: 1, color: Color(0xFFF1F5F9)),
               const SizedBox(height: 10),
 
-              // ── Row 3: branch + item count  +  Total price ─────────────
+              // ── Row 3: Total Pembayaran + Optional Rating Row ──
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  if (order.branchName.isNotEmpty) ...[
-                    const Icon(Icons.storefront_outlined,
-                        size: 15, color: Color(0xFF111827)),
-                    const SizedBox(width: 4),
-                    Text(
-                      order.branchName,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF111827),
-                          fontWeight: FontWeight.normal),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  const Icon(Icons.inventory_2_outlined,
-                      size: 14, color: Color(0xFF111827)),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      tr
-                          .get('item_count', lang)
-                          .replaceFirst('{count}', order.itemCount.toString()),
-                      style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF111827),
-                          fontWeight: FontWeight.normal),
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    isEn ? 'Total Payment' : 'Total Pembayaran',
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFF6B7280),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Total',
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF111827),
-                        fontWeight: FontWeight.normal),
-                  ),
-                  const SizedBox(width: 4),
                   Text(
                     'Rp ${order.formattedTotalAmount}',
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                       fontSize: 15,
                       color: Color(0xFFDD2222),
                     ),
@@ -708,9 +1016,11 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                 ],
               ),
 
+              if (!isActive && order.isCompleted) _buildRatingRow(order, lang),
+
               const SizedBox(height: 12),
 
-              // ── Row 4: action buttons ─────────────────────────────
+              // ── Row 4: Adaptive Action Buttons ─────────────────────────────
               if (isActive) ...[
                 Row(
                   children: [
@@ -725,10 +1035,10 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                             onPressed: () =>
                                 _showCancelDialog(order.id.toString(), lang),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF111827),
-                              side: const BorderSide(color: Color(0xFF9CA3AF)),
+                              foregroundColor: const Color(0xFF374151),
+                              side: const BorderSide(color: Color(0xFFD1D5DB)),
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8)),
+                                  borderRadius: BorderRadius.circular(10)),
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8),
                             ),
@@ -738,8 +1048,8 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                   fontSize: 12.5,
-                                  color: Color(0xFF111827),
-                                  fontWeight: FontWeight.normal),
+                                  color: Color(0xFF374151),
+                                  fontWeight: FontWeight.w500),
                             ),
                           ),
                         ),
@@ -764,15 +1074,16 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                                   child: SizedBox(
                                     height: 40,
                                     child: OutlinedButton(
-                                      onPressed: () => _openOrderDetails(order, isActive: isActive),
+                                      onPressed: () => _openOrderDetails(order,
+                                          isActive: isActive),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor:
-                                            const Color(0xFF111827),
+                                            const Color(0xFF374151),
                                         side: const BorderSide(
-                                            color: Color(0xFF9CA3AF)),
+                                            color: Color(0xFFD1D5DB)),
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
-                                                BorderRadius.circular(8)),
+                                                BorderRadius.circular(10)),
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 8),
                                       ),
@@ -782,8 +1093,8 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
                                             fontSize: 12.5,
-                                            color: Color(0xFF111827),
-                                            fontWeight: FontWeight.normal),
+                                            color: Color(0xFF374151),
+                                            fontWeight: FontWeight.w500),
                                       ),
                                     ),
                                   ),
@@ -803,13 +1114,14 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                             child: SizedBox(
                               height: 40,
                               child: OutlinedButton(
-                                onPressed: () => _openOrderDetails(order, isActive: isActive),
+                                onPressed: () =>
+                                    _openOrderDetails(order, isActive: isActive),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF111827),
+                                  foregroundColor: const Color(0xFF374151),
                                   side: const BorderSide(
-                                      color: Color(0xFF9CA3AF)),
+                                      color: Color(0xFFD1D5DB)),
                                   shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8)),
+                                      borderRadius: BorderRadius.circular(10)),
                                   padding:
                                       const EdgeInsets.symmetric(horizontal: 8),
                                 ),
@@ -819,8 +1131,8 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                       fontSize: 12.5,
-                                      color: Color(0xFF111827),
-                                      fontWeight: FontWeight.normal),
+                                      color: Color(0xFF374151),
+                                      fontWeight: FontWeight.w500),
                                 ),
                               ),
                             ),
@@ -833,17 +1145,17 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
               ] else ...[
                 Row(
                   children: [
-                    // Left: Outline Abu-abu (Lihat Detail)
                     Expanded(
                       child: SizedBox(
                         height: 40,
                         child: OutlinedButton(
-                          onPressed: () => _openOrderDetails(order, isActive: isActive),
+                          onPressed: () =>
+                              _openOrderDetails(order, isActive: isActive),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF111827),
-                            side: const BorderSide(color: Color(0xFF9CA3AF)),
+                            foregroundColor: const Color(0xFF374151),
+                            side: const BorderSide(color: Color(0xFFD1D5DB)),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
+                                borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                           ),
                           child: Text(
@@ -852,34 +1164,65 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 fontSize: 12.5,
-                                color: Color(0xFF111827),
-                                fontWeight: FontWeight.normal),
+                                color: Color(0xFF374151),
+                                fontWeight: FontWeight.w500),
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Right: Outline Merah (Pesan Lagi)
                     Expanded(
                       child: SizedBox(
                         height: 40,
-                        child: OutlinedButton(
-                          onPressed: () => _handleReorder(order.id.toString()),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFDD2222),
-                            side: const BorderSide(color: Color(0xFFDD2222)),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                          ),
-                          child: Text(
-                            tr.get('reorder', lang),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 12.5, fontWeight: FontWeight.normal),
-                          ),
-                        ),
+                        child: order.isCompleted
+                            ? ElevatedButton.icon(
+                                onPressed: () =>
+                                    _handleReorder(order.id.toString()),
+                                icon: const Icon(Icons.refresh_rounded,
+                                    size: 16),
+                                label: Text(
+                                  tr.get('reorder', lang),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFDD2222),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8),
+                                ),
+                              )
+                            : OutlinedButton.icon(
+                                onPressed: () =>
+                                    _handleReorder(order.id.toString()),
+                                icon: const Icon(Icons.refresh_rounded,
+                                    size: 16),
+                                label: Text(
+                                  tr.get('reorder', lang),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFDD2222),
+                                  side:
+                                      const BorderSide(color: Color(0xFFDD2222)),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8),
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -929,79 +1272,125 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
   Widget _buildStatusChip(Order order, AppLanguage lang) {
     final isEn = lang == AppLanguage.english;
     final String text;
+    final Color bgColor;
+    final Color textColor;
+    final Color borderColor;
 
     if (order.isExpired) {
       text = isEn ? 'Expired' : 'Kedaluwarsa';
+      bgColor = const Color(0xFFF1F5F9);
+      textColor = const Color(0xFF475569);
+      borderColor = const Color(0xFFCBD5E1);
     } else {
       switch (order.status.toLowerCase().trim()) {
         case 'pending':
         case 'pending_payment':
         case 'awaiting_payment':
           text = isEn ? 'Unpaid' : 'Belum Bayar';
+          bgColor = const Color(0xFFFFFBEB);
+          textColor = const Color(0xFFB45309);
+          borderColor = const Color(0xFFFDE68A);
           break;
         case 'payment_failed':
           text = isEn ? 'Failed' : 'Gagal';
+          bgColor = const Color(0xFFFEF2F2);
+          textColor = const Color(0xFFB91C1C);
+          borderColor = const Color(0xFFFECACA);
           break;
         case 'paid':
         case 'paid_waiting_confirmation':
           text = isEn ? 'Paid' : 'Dibayar';
+          bgColor = const Color(0xFFEFF6FF);
+          textColor = const Color(0xFF1D4ED8);
+          borderColor = const Color(0xFFBFDBFE);
           break;
         case 'confirmed':
         case 'accepted':
           text = isEn ? 'Accepted' : 'Diterima';
+          bgColor = const Color(0xFFEFF6FF);
+          textColor = const Color(0xFF1D4ED8);
+          borderColor = const Color(0xFFBFDBFE);
           break;
         case 'rejected':
           text = isEn ? 'Rejected' : 'Ditolak';
+          bgColor = const Color(0xFFFEF2F2);
+          textColor = const Color(0xFFB91C1C);
+          borderColor = const Color(0xFFFECACA);
           break;
         case 'preparing':
+        case 'cooking':
           text = isEn ? 'Preparing' : 'Disiapkan';
+          bgColor = const Color(0xFFFFF7ED);
+          textColor = const Color(0xFFC2410C);
+          borderColor = const Color(0xFFFED7AA);
           break;
         case 'ready':
         case 'ready_for_pickup':
           text = order.isTakeAway
               ? (isEn ? 'Ready' : 'Siap Diambil')
               : (isEn ? 'Ready' : 'Siap Saji');
+          bgColor = const Color(0xFFECFDF5);
+          textColor = const Color(0xFF047857);
+          borderColor = const Color(0xFFA7F3D0);
           break;
         case 'picking_up':
         case 'picking_up_driver':
           text = isEn ? 'Driver OTW' : 'Kurir OTW';
+          bgColor = const Color(0xFFEEF2FF);
+          textColor = const Color(0xFF4338CA);
+          borderColor = const Color(0xFFC7D2FE);
           break;
         case 'picked_up':
           text = isEn ? 'Picked Up' : 'Diambil';
+          bgColor = const Color(0xFFEEF2FF);
+          textColor = const Color(0xFF4338CA);
+          borderColor = const Color(0xFFC7D2FE);
           break;
         case 'in_delivery':
         case 'out_for_delivery':
           text = isEn ? 'Delivering' : 'Diantar';
+          bgColor = const Color(0xFFEEF2FF);
+          textColor = const Color(0xFF4338CA);
+          borderColor = const Color(0xFFC7D2FE);
           break;
         case 'completed':
           text = order.isDelivery
-              ? (isEn ? 'Delivered' : 'Terkirim')
-              : (isEn ? 'Completed' : 'Selesai');
+              ? (isEn ? '✓ Delivered' : '✓ Terkirim')
+              : (isEn ? '✓ Completed' : '✓ Selesai');
+          bgColor = const Color(0xFFECFDF5);
+          textColor = const Color(0xFF15803D);
+          borderColor = const Color(0xFFBBF7D0);
           break;
         case 'cancelled':
           text = isEn ? 'Cancelled' : 'Dibatalkan';
+          bgColor = const Color(0xFFFEF2F2);
+          textColor = const Color(0xFFB91C1C);
+          borderColor = const Color(0xFFFECACA);
           break;
         default:
           text = order.status;
+          bgColor = const Color(0xFFF1F5F9);
+          textColor = const Color(0xFF475569);
+          borderColor = const Color(0xFFCBD5E1);
       }
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+      padding: const EdgeInsets.symmetric(horizontal: 8.5, vertical: 3.5),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFF111827), width: 1.0),
-        borderRadius: BorderRadius.circular(6),
+        color: bgColor,
+        border: Border.all(color: borderColor, width: 1.0),
+        borderRadius: BorderRadius.circular(7),
       ),
       child: Text(
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Color(0xFF111827),
-          fontWeight: FontWeight.w500,
-          fontSize: 11.5,
+        style: TextStyle(
+          color: textColor,
+          fontWeight: FontWeight.w600,
+          fontSize: 11,
         ),
       ),
     );
@@ -1482,7 +1871,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
     final isCash = order.paymentMethod.toLowerCase() == 'cash' ||
         order.paymentMethod.toLowerCase() == 'tunai';
     if (isCash) {
-      return OutlinedButton.icon(
+      return ElevatedButton(
         onPressed: () {
           final orderNum = order.orderNumber.isNotEmpty
               ? order.orderNumber
@@ -1490,36 +1879,37 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
           context.go(
               '/cash-payment?orderId=$orderNum&amount=${order.totalAmount}');
         },
-        // icon: const Icon(Icons.payments_rounded, size: 15),
-        label: Text(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFDD2222),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+        ),
+        child: Text(
           tr.get('pay_now', lang),
-          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.normal),
+          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-        ),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFFDD2222),
-          side: const BorderSide(color: Color(0xFFDD2222)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
         ),
       );
     }
 
-    return OutlinedButton.icon(
+    return ElevatedButton.icon(
       onPressed: () => context.go(
           '/payment/${order.orderNumber.isNotEmpty ? order.orderNumber : order.id}'),
       icon: const Icon(Icons.payment_rounded, size: 15),
       label: Text(
         tr.get('pay_now', lang),
-        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.normal),
+        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFFDD2222),
-        side: const BorderSide(color: Color(0xFFDD2222)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFDD2222),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 8),
       ),
     );
@@ -1543,7 +1933,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
                 status == 'picked_up'));
 
     if (canConfirmReceived) {
-      return OutlinedButton(
+      return ElevatedButton(
         onPressed: () async {
           final confirmed = await AppDialog.showConfirm(
             context: context,
@@ -1582,15 +1972,16 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
             }
           }
         },
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFFDD2222),
-          side: const BorderSide(color: Color(0xFFDD2222)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFDD2222),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: const EdgeInsets.symmetric(horizontal: 8),
         ),
         child: Text(
           tr.get('order_received', lang),
-          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.normal),
+          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -1601,7 +1992,7 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
     if (order.isDelivery &&
         order.trackUrl != null &&
         order.trackUrl!.isNotEmpty) {
-      return OutlinedButton(
+      return ElevatedButton(
         onPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -1614,15 +2005,16 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
             ),
           );
         },
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFFDD2222),
-          side: const BorderSide(color: Color(0xFFDD2222)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFDD2222),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: const EdgeInsets.symmetric(horizontal: 8),
         ),
         child: Text(
           isIndo ? 'Lacak Kurir' : 'Track Driver',
-          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.normal),
+          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -1636,12 +2028,12 @@ class _OrderHistoryViewState extends ConsumerState<OrderHistoryView>
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFFDD2222),
           side: const BorderSide(color: Color(0xFFDD2222)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: const EdgeInsets.symmetric(horizontal: 8),
         ),
         child: Text(
           isIndo ? 'Lacak Pesanan' : 'Track Order',
-          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.normal),
+          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

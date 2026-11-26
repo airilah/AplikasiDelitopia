@@ -265,6 +265,8 @@ class Order {
   final String paymentStatus;
 
   final int point;
+  final bool isReviewed;
+  final double? rating;
 
   /// Optional cancellation reason stored by backend.
   final String? cancelReason;
@@ -319,6 +321,8 @@ class Order {
     required this.paymentMethod,
     required this.paymentStatus,
     this.point = 0,
+    this.isReviewed = false,
+    this.rating,
     this.cancelReason,
     this.tableNumber,
     this.trackUrl,
@@ -418,6 +422,12 @@ class Order {
             .toLowerCase()
             .trim(),
         point: _parseInt(json['point']) ?? 0,
+        isReviewed: json['is_reviewed'] == true ||
+            json['is_reviewed'] == 1 ||
+            _parseDouble(json['rating']) != null ||
+            (json['review'] is Map && _parseDouble(json['review']['rating']) != null),
+        rating: _parseDouble(json['rating']) ??
+            (json['review'] is Map ? _parseDouble(json['review']['rating']) : null),
         cancelReason: json['cancel_reason']?.toString() ??
             json['cancellation_reason']?.toString(),
         tableNumber: json['table_number']?.toString() ??
