@@ -48,20 +48,7 @@
                 <data android:scheme="delitopia" android:pathPrefix="/product" />
                 <data android:scheme="delitopia" android:pathPrefix="/share/menu" />
             </intent-filter>
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https"
-                      android:host="delitopia.mannagroup.id"
-                      android:pathPrefix="/dine-in" />
-                <data android:scheme="https"
-                      android:host="delitopia.mannagroup.id"
-                      android:pathPrefix="/share/menu" />
-                <data android:scheme="https"
-                      android:host="delitopia.mannagroup.id"
-                      android:pathPrefix="/product" />
-            </intent-filter>
+            <!-- Android App Links (verified via https://aplikasi.mannagroup.id/.well-known/assetlinks.json) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
