@@ -1319,8 +1319,30 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
                     _buildSummaryRow(tr.get('subtotal', lang), cart.subtotal),
                     if (_selectedVoucherId != null && _selectedVoucherDiscount != null && _selectedVoucherDiscount! > 0)
                       _buildSummaryRow(tr.get('voucher_discount', lang), -_selectedVoucherDiscount!.roundToDouble(), isDiscount: true),
-                    _buildSummaryRow(tr.get('service', lang), pricing.service),
-                    _buildSummaryRow(tr.get('tax', lang), pricing.tax),
+                    _buildSummaryRow(
+                      tr.get('service', lang),
+                      pricing.service,
+                      onInfoTap: () => _showFeeInfoDialog(
+                        title: lang == AppLanguage.indonesia
+                            ? 'Biaya Layanan'
+                            : 'Service Fee',
+                        message: lang == AppLanguage.indonesia
+                            ? 'Biaya layanan diterapkan untuk pengembangan teknologi demi memberikan pelayanan terbaik.'
+                            : 'A service fee is applied for technology development to deliver the best service.',
+                        isIndo: lang == AppLanguage.indonesia,
+                      ),
+                    ),
+                    _buildSummaryRow(
+                      tr.get('tax', lang),
+                      pricing.tax,
+                      onInfoTap: () => _showFeeInfoDialog(
+                        title: lang == AppLanguage.indonesia ? 'Pajak' : 'Tax',
+                        message: lang == AppLanguage.indonesia
+                            ? 'Pajak restoran yang diterapkan sesuai ketentuan pemerintah.'
+                            : 'Restaurant tax applied in accordance with government regulations.',
+                        isIndo: lang == AppLanguage.indonesia,
+                      ),
+                    ),
                     if (_orderType == 'delivery' && (_tempDeliveryAddress != null || _selectedAddressId != null))
                       Padding(
                         padding: const EdgeInsets.only(bottom: 5),
@@ -2048,19 +2070,106 @@ class _CheckoutViewState extends ConsumerState<CheckoutView> {
   );
 }
 
-  Widget _buildSummaryRow(String label, double amount, {bool isTotal = false, bool isDiscount = false}) {
+  void _showFeeInfoDialog({
+    required String title,
+    required String message,
+    required bool isIndo,
+  }) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded,
+                size: 20, color: Color(0xFFDD2222)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF111827),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontSize: 13.5,
+            height: 1.45,
+            color: Color(0xFF374151),
+          ),
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDD2222),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                isIndo ? 'Mengerti' : 'Got it',
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, double amount, {bool isTotal = false, bool isDiscount = false, VoidCallback? onInfoTap}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: isTotal ? 14 : 12.5,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
-              color: isDiscount ? const Color(0xFF16A34A) : isTotal ? const Color(0xFF1E293B) : const Color(0xFF475569),
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: isTotal ? 14 : 12.5,
+                  fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+                  color: isDiscount ? const Color(0xFF16A34A) : isTotal ? const Color(0xFF1E293B) : const Color(0xFF475569),
+                ),
+              ),
+              if (onInfoTap != null) ...[
+                const SizedBox(width: 4),
+                InkWell(
+                  onTap: onInfoTap,
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Icon(
+                      Icons.info_outline_rounded,
+                      size: 15,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
           Text(
             '${isDiscount ? "-" : ""}Rp ${amount.abs().toInt().toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (m) => "${m[1]}.")}',

@@ -2686,8 +2686,30 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
             if (order.discount > 0)
               _paymentRow(isIndo ? 'Diskon' : 'Discount', -order.discount,
                   isDiscount: true),
-            _paymentRow(isIndo ? 'Layanan' : 'Service Fee', order.service),
-            _paymentRow(isIndo ? 'Pajak' : 'Tax', order.tax),
+            _paymentRow(
+              isIndo ? 'Layanan' : 'Service Fee',
+              order.service,
+              onInfoTap: () => _showFeeInfoDialog(
+                context,
+                title: isIndo ? 'Biaya Layanan' : 'Service Fee',
+                message: isIndo
+                    ? 'Biaya layanan diterapkan untuk pengembangan teknologi demi memberikan pelayanan terbaik.'
+                    : 'A service fee is applied for technology development to deliver the best service.',
+                isIndo: isIndo,
+              ),
+            ),
+            _paymentRow(
+              isIndo ? 'Pajak' : 'Tax',
+              order.tax,
+              onInfoTap: () => _showFeeInfoDialog(
+                context,
+                title: isIndo ? 'Pajak' : 'Tax',
+                message: isIndo
+                    ? 'Pajak restoran yang diterapkan sesuai ketentuan pemerintah.'
+                    : 'Restaurant tax applied in accordance with government regulations.',
+                isIndo: isIndo,
+              ),
+            ),
             if (order.deliveryFee > 0)
               _paymentRow(tr.get('delivery_fee', lang), order.deliveryFee),
             if ((order.totalAmount -
@@ -2791,11 +2813,80 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
     );
   }
 
+  void _showFeeInfoDialog(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required bool isIndo,
+  }) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded,
+                size: 20, color: Color(0xFFDD2222)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF111827),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontSize: 13.5,
+            height: 1.45,
+            color: Color(0xFF374151),
+          ),
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDD2222),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                isIndo ? 'Mengerti' : 'Got it',
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _paymentRow(
     String label,
     double amount, {
     bool isTotal = false,
     bool isDiscount = false,
+    VoidCallback? onInfoTap,
   }) {
     final formatted = amount.abs().toInt().toString().replaceAllMapped(
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
@@ -2804,12 +2895,34 @@ class _OrderDetailsViewState extends ConsumerState<OrderDetailsView>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: TextStyle(
-                fontSize: isTotal ? 14 : 12.5,
-                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-                color: isDiscount ? Colors.green[700] : const Color(0xFF111827),
-              )),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label,
+                  style: TextStyle(
+                    fontSize: isTotal ? 14 : 12.5,
+                    fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+                    color: isDiscount
+                        ? Colors.green[700]
+                        : const Color(0xFF111827),
+                  )),
+              if (onInfoTap != null) ...[
+                const SizedBox(width: 4),
+                InkWell(
+                  onTap: onInfoTap,
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Icon(
+                      Icons.info_outline_rounded,
+                      size: 15,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
           Text(
             '${isDiscount ? '-' : ''}Rp $formatted',
             style: TextStyle(
